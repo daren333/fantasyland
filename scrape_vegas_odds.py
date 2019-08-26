@@ -47,7 +47,7 @@ for row in rows:
 		game.home = m.group(2)
 		game.date = m.group(3)
 
-	m = re.search("<br/>(.?\d+½?(o|u)?).*?<br/>(.?\d+½?(o|u)?).*?", row)
+	m = re.search("<br/>(.?\d+½?)(o|u)?.*?<br/>(.?\d+½?)(o|u)?.*?", row)
 	if m:
 		if re.search('[ou]', m.group(1)):
 			game.over_under = m.group(1)
@@ -58,6 +58,13 @@ for row in rows:
 			game.over_under = m.group(3)
 			game.favorite = game.home
 
+	half_spread = re.search("(\d+)½", str(game.spread))
+	if half_spread:
+		game.spread = (half_spread.group(1) + '.5')
+
+	half_ou= re.search("(\d+)½", str(game.over_under))
+	if half_ou:
+		game.over_under = (half_ou.group(1) + '.5')
 	games.append(game)
 
 for game in games:
