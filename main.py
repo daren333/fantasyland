@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     parser.add_argument("-c", "--csv_file", 
                             type = str,
-                            default='/Users/dansher/fun_repos/fantasyland/sample_fanduel_sheet.csv',
+                            default='sample_fanduel_sheet.csv',
                             help="path to csv file containing players")
             
     parser.add_argument("-t", "--test_mode", 
