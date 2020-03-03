@@ -10,6 +10,7 @@ fanduel_settings = {'PaTD':4, 'PaY':0.04, 'PaI':-1,
 					'DE/RTD':6, 'DE/BRTD': 6, 'DE/FRTD':6
 					}
 
+
 def calc_passing(player, score_settings):
 	pass_yds = player['Passing Yards'] * score_settings['PaY']
 	pass_tds = player['TD Passes'] * score_settings['PaTD']
@@ -19,14 +20,14 @@ def calc_passing(player, score_settings):
 def calc_rushing(player, score_settings):
 	rush_yds = player['Receiving Yards'] * score_settings['RuY']
 	rush_tds = player['Receiving TDs'] * score_settings['RuTD']
-	return points = rush_yds + rush_tds
+	return rush_yds + rush_tds
+
 
 def calc_receiving(player, score_settings):
 	recs = player['Receptions'] * score_settings['Re']
 	rec_yds = player['Receiving Yards'] * score_settings['ReY']
 	rec_tds = player['Receiving TDs'] * score_settings['ReTD']
-	return points = recs + rec_yds + rec_tds
-
+	return recs + rec_yds + rec_tds
 
 
 def calc_scoring(players, score_settings = fanduel_settings):
