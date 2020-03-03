@@ -5,7 +5,6 @@ from scrape_stats import craft_url, walk_homepage
 
 def main(args):
     if args.test_mode:
-        #csv_path = '/Users/dansher/fun_repos/fantasyland/sample_fanduel_sheet.csv'
         csv_path = args.csv_file
         players = []
 
