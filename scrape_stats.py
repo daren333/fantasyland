@@ -100,17 +100,96 @@ def walk_homepage(player, soup):
         year = link[1]
         fantasy[year] = "https://www.pro-football-reference.com" + url
     
-    scrape_game_logs(player, gamelogs)    
+    scrape_splits(player, splits)
+    scrape_gamelogs(player, gamelogs)
+    scrape_fantasy(player, fantasy)
+    
+    
 
-
-def scrape_game_logs(player, gamelogs):
-    stats = {}
-
+def scrape_gamelogs(player, gamelogs):
     for year in gamelogs.keys():
         r = requests.get(gamelogs[year])
         soup = BeautifulSoup(r.text, features='lxml')
-        table = soup.find_all(re.compile(r"stats\.\d"))
-        print(table)
+        week_stats = {}
+        year_stats = {}
 
+        i = 1
+        while soup.select("#stats > tbody > tr:nth-of-type(%d)" % i):
+            row = soup.select("#stats > tbody > tr:nth-of-type(%d)" % i)
+            stats = re.findall(r"data-stat=\"(.*?)\".*?>(.*?)</", str(row))
+            for stat in stats:
+                s = re.search(r"<a href=.*?>(.*)", stat[1])
+                if s:
+                    week_stats[stat[0]] = s.group(1)
+                else:
+                    week_stats[stat[0]] = stat[1]
+            game = week_stats["game_num"]
+            year_stats[game] = week_stats
+            player.stats['gamelogs'][year] = year_stats
+            i += 1
+    
+    return
 
+def scrape_splits(player, splits):
+    splits_data = {}
 
+    for year in splits.keys():
+        year_splits = {}
+        year_data = {}
+        splits_data[year] = year_splits
+        split_id = None
+
+        r = requests.get(splits[year])
+        soup = BeautifulSoup(r.text, features='lxml')
+        tables = ["#stats", "#advanced_splits"]
+        for table in tables:
+            i = 1
+            while(soup.select(table + " > tbody > tr:nth-child(%d)" % i)):
+                row = soup.select("#stats > tbody > tr:nth-child(%d)" % i)
+                s = re.search(r"thead", str(row))
+                if not s:
+                    s = re.search(r"data-stat=\"split_id\".*?>(.*?)</", str(row))
+                    if s and s.group(1) != '':
+                        split_id = s.group(1)
+                        curr_data = {}
+                        year_splits[split_id] = curr_data
+                    s = re.search(r"data-stat=\"split_value\">(.*?)</", str(row))
+                    if s:
+                        split_val = s.group(1)
+                        s = re.search(r"<a href=.*?>(.*)", split_val)
+                        if s:
+                            split_val = s.group(1)
+
+                    stats = re.findall(r"data-stat=\"(.*?)\".*?>(.*?)</", str(row))
+                    # Remove split_id and split_value from stats
+                    stats.pop(0)
+                    stats.pop(0)
+                    curr_data[split_val] = stats
+                i += 1
+    player.splits = splits_data
+
+    return
+
+def scrape_fantasy(player, fantasy):
+    for year in fantasy.keys():
+        r = requests.get(fantasy[year])
+        soup = BeautifulSoup(r.text, features='lxml')
+        week_stats = {}
+        year_stats = {}
+
+        i = 1
+        while soup.select("#player_fantasy > tbody > tr:nth-of-type(%d)" % i):
+            row = soup.select("#player_fantasy > tbody > tr:nth-of-type(%d)" % i)
+            stats = re.findall(r"data-stat=\"(.*?)\".*?>(.*?)</", str(row))
+            for stat in stats:
+                s = re.search(r"<a href=.*?>(.*)", stat[1])
+                if s:
+                    week_stats[stat[0]] = s.group(1)
+                else:
+                    week_stats[stat[0]] = stat[1]
+            game = week_stats["game_num"]
+            year_stats[game] = week_stats
+            player.stats['fantasy'][year] = year_stats
+            i += 1
+    
+    return
