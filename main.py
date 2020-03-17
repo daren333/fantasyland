@@ -1,7 +1,7 @@
 import argparse
 import csv
 from classes import Player, Game
-from scrape_stats import craft_url, walk_homepage
+from scrape_stats import craft_url, scrape_playerdata
 
 def main(args):
     if args.test_mode:
@@ -25,9 +25,11 @@ def main(args):
         #for player in players:
         player = players[3]
         soup = craft_url(player)
-        print(player.ln)
-        print(player.url)
-        walk_homepage(player, soup)
+        scrape_playerdata(player, soup)
+        player.write_stats(args.output_dir)
+
+
+        
         
 
 
@@ -38,6 +40,11 @@ if __name__ == "__main__":
                             type = str,
                             default='sample_fanduel_sheet.csv',
                             help="path to csv file containing players")
+    
+    parser.add_argument("-o", "--output_dir",
+                            type = str,
+                            default="sample_dbs",
+                            help="path to output directory containing stats files")
             
     parser.add_argument("-t", "--test_mode", 
                             action="store_true", 

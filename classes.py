@@ -1,4 +1,4 @@
-
+from os import path, stat
 
 class Player:
     def __init__(self, pid, fn, ln, pos, sal, team, injury_status, url=None):
@@ -9,6 +9,46 @@ class Player:
         self.sal = sal
         self.team = team
         self.injury_status = injury_status
+        self.stats = {'gamelogs' : {}, 'splits' : {}, 'fantasy' : {}}
+
+    def write_stats(self, db):
+        for stat_type, v in self.stats.items():
+            for year, stats_dict in v.items():
+                filepath = '%s/%s_%s.csv'%(db, stat_type, year)
+                
+                with open(filepath, 'w') as f:
+                    if stat_type == 'splits':
+                         # write headers if file doesn't exist yet
+                        if not path.exists(filepath) or path.getsize(filepath) == 0:
+                            f.write('pid, first, last, pos, team, ')
+                            for stat_header, splits in stats_dict.items():
+                                for split in splits.keys():
+                                    f.write('%s-%s, ' % (stat_header, split))
+                            f.write('\n')
+                        #write stats to csv
+                        for stat_header, splits in stats_dict.items():
+                            f.write('%s, %s, %s, %s, %s, ' %(self.pid, self.fn, self.ln, self.pos, self.team))
+                            for split in splits.values():
+                                f.write('%s, ' % split)
+                            f.write('\n')
+                    else:
+                        # write headers if file doesn't exist yet
+                        if not path.exists(filepath) or path.getsize(filepath) == 0:
+                            f.write('pid, first, last, pos, team, week, ')
+                            week = next(iter(stats_dict))
+                            for stat_header in stats_dict[week].keys():
+                                f.write('%s, '%stat_header)
+                            f.write('\n')
+                        #write stats to csv
+                        for week in sorted(stats_dict.keys()):
+                            f.write('%s, %s, %s, %s, %s, ' %(self.pid, self.fn, self.ln, self.pos, self.team))
+                            f.write('%s, ' % week)
+                            for stat in stats_dict[week].values():
+                                f.write('%s, '%stat)
+                            f.write('\n')
+
+                    
+
 
 
 class Game:
@@ -38,7 +78,7 @@ class GameLog_Stat:
                     punt_ret, punt_ret_yds, punt_yds_per_ret, punt_tds,
                     fum, fum_lost,
                     off_snap_cnt, off_snap_per, st_snap_cnt, st_snap_per):
-                    
+
                     self.date = date 
                     self.game_num = game_num
                     self.week_num = week_num
