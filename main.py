@@ -1,5 +1,6 @@
 import argparse
 import csv
+import requests
 from classes import Player, Game
 from scrape_stats import craft_url, scrape_playerdata
 
@@ -20,12 +21,13 @@ def main(args):
                     salary = row[6]
                     team = row[9]
                     injury_status = row[11]
-                    players.append(Player(pid, fn, ln, pos, salary, team, injury_status))
+                    players.append(Player(pid, fn, ln, pos, salary, team))
 
+        
         #for player in players:
         player = players[3]
-        soup = craft_url(player)
-        scrape_playerdata(player, soup)
+        soup = craft_url(player, test_mode=True)
+        scrape_playerdata(player, soup, test_mode=True)
         player.write_stats(args.output_dir)
 
 

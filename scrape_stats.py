@@ -2,8 +2,9 @@ from bs4 import BeautifulSoup
 import csv
 import requests
 import re
+import time
 
-from classes import Player, Game
+from classes import Player, Game, Year
 
 def get_team_id(pos, soup):
 
@@ -29,51 +30,60 @@ def get_team_id(pos, soup):
 # .htm
 # ex. Tom Brady = players/B/BradTo00.htm
 
-def craft_url(player, max_retries = 5):
+def craft_url(player, max_retries = 5, test_mode = False):
     base_url = 'http://www.pro-football-reference.com/players'
     last_initial = player.ln[0]
     ln_four = player.ln[0:4]
     fn_two = player.fn[0:2]
     ref_num = 0
     url = '%s/%s/%s%s0%d.htm' % (base_url, last_initial, ln_four, fn_two, ref_num)
-    #url = 'https://www.pro-football-reference.com/players/B/BradTo00.htm'
-    r = requests.get(url)
-    pos = None
-    team = None
 
-    while r.status_code == 404:
-        if ref_num <= max_retries:
-            print('404 received for URL: %s\nincrementing ref_num and trying again' % url)
-            ref_num += 1
-            url = '%s/%s/%s%s0%d.htm' % (base_url, last_initial, ln_four, fn_two, ref_num)
-            r = requests.get(url)
-        else:
-            print('Max number of retries attempted. failed to get page for %s %s' % (player.fn, player.ln))
-            return -1
+    start = time.time() 
 
-    while pos != player.pos or team != player.team:
-        r = requests.get(url)
-        soup = BeautifulSoup(r.text, features='lxml')
-        pos_div = soup.select('#meta > div:nth-child(2) > p:nth-child(3)')
-        pd = re.search(r">\:\s(\w+)", str(pos_div))
-    
-        if pd:
-            pos = pd.group(1)
-            team = get_team_id(pos, soup)  
-            print("last name: %s\n team: %s\n position: %s" % (player.ln, team, pos))
-        else:
+    with requests.Session() as session:
+        r = session.get(url)
+        pos = None
+        team = None
+
+        while r.status_code == 404:
             if ref_num <= max_retries:
-                print('Wrong player info received for URL: %s\nincrementing ref_num and trying again' % url)
+                print('404 received for URL: %s\nincrementing ref_num and trying again' % url)
                 ref_num += 1
                 url = '%s/%s/%s%s0%d.htm' % (base_url, last_initial, ln_four, fn_two, ref_num)
-                
+                r = requests.get(url)
             else:
                 print('Max number of retries attempted. failed to get page for %s %s' % (player.fn, player.ln))
-                return -2
-    player.url = url
-    return soup
+                return -1
 
-def scrape_playerdata(player, soup):
+        while pos != player.pos or team != player.team:
+            r = session.get(url)
+            soup = BeautifulSoup(r.text, features='lxml')
+            pos_div = soup.select('#meta > div:nth-child(2) > p:nth-child(3)')
+            pd = re.search(r">\:\s(\w+)", str(pos_div))
+        
+            if pd:
+                pos = pd.group(1)
+                team = get_team_id(pos, soup)  
+                print("last name: %s\n team: %s\n position: %s" % (player.ln, team, pos))
+            else:
+                if ref_num <= max_retries:
+                    print('Wrong player info received for URL: %s\nincrementing ref_num and trying again' % url)
+                    ref_num += 1
+                    url = '%s/%s/%s%s0%d.htm' % (base_url, last_initial, ln_four, fn_two, ref_num)
+                    
+                else:
+                    print('Max number of retries attempted. failed to get page for %s %s' % (player.fn, player.ln))
+                    return -2
+        player.url = url
+
+        end = time.time()
+        if test_mode:
+            print("HTML (soup) obtained in %.2f seconds" %(end - start))
+
+        return soup
+
+def scrape_playerdata(player, soup, test_mode = False):
+    start = time.time()
     gamelogs = {}
     splits = {}
     fantasy = {}
@@ -100,14 +110,24 @@ def scrape_playerdata(player, soup):
         year = link[1]
         fantasy[year] = "https://www.pro-football-reference.com" + url
     
-    scrape_gamelogs(player, gamelogs)
-    scrape_fantasy(player, fantasy)
-    scrape_splits(player, splits)
+    # Set up year objects for players
+    player.years = [Year(year, set()) for year in gamelogs.keys()]
+
+    with requests.Session() as session:
+        scrape_gamelogs(player, gamelogs, session, test_mode=test_mode)
+        scrape_fantasy(player, fantasy, session, test_mode=test_mode)
+        scrape_splits(player, splits, session, test_mode=test_mode)
+
+    end = time.time()
+    if test_mode:
+        print("Total scrape time is %f seconds" % (end - start))
     
 
-def scrape_gamelogs(player, gamelogs):
+def scrape_gamelogs(player, gamelogs, session, test_mode):
+    start = time.time()
+
     for year in gamelogs.keys():
-        r = requests.get(gamelogs[year])
+        r = session.get(gamelogs[year])
         soup = BeautifulSoup(r.text, features='lxml')
         year_stats = {}
 
@@ -125,57 +145,102 @@ def scrape_gamelogs(player, gamelogs):
             game = week_stats["game_num"]
             year_stats[game] = week_stats
             i += 1
-        player.stats['gamelogs'][year] = year_stats
+        
+        year_obj = player.get_year(year)
+        year_obj.stats['gamelogs'] = year_stats
+        # add teams played for for each week 
+        [year_obj.teams.add(year_stats[week]['team']) for week in year_stats]
+    
+    end = time.time()
+    if test_mode:
+        print("Gamelog scrape time is %.2f seconds" % (end - start))
     return
 
-def scrape_splits(player, splits):
+def scrape_splits(player, splits, session, test_mode):
+    start = time.time()
+    avg_get_time = 0
+    avg_parse_time = 0
     splits_data = {}
 
     for year in splits.keys():
+        year_obj = player.get_year(year)
         year_splits = {}
-        year_data = {}
-        splits_data[year] = year_splits
+        year_obj.stats['splits'] = year_splits
         split_id = None
 
-        r = requests.get(splits[year])
+        get_time_start = time.time()
+        r = session.get(splits[year])
+        get_time_end = time.time()
+
+        parse_time_start = time.time()
         soup = BeautifulSoup(r.text, features='lxml')
         tables = ["#stats", "#advanced_splits"]
         for table in tables:
             i = 1
             while(soup.select(table + " > tbody > tr:nth-child(%d)" % i)):
-                row = soup.select("#stats > tbody > tr:nth-child(%d)" % i)
+                row = str(soup.select(table + " > tbody > tr:nth-child(%d)" % i))
+                
                 s = re.search(r"thead", str(row))
                 if not s:
                     stats = {}
-                    s = re.search(r"data-stat=\"split_id\".*?>(.*?)</", str(row))
+
+                    #fix ampersand and less than signs
+                    row = row.replace('&amp;', '&')
+                    row = row.replace('&lt;', '<')
+                    row = row.replace('&gt;', '>')
+
+                    #b/c for some reason its split_id in one table and split_type in the other :/
+                    if table == '#stats':
+                        s = re.search(r"data-stat=\"split_id\".*?>(.*?)</", row)
+                    else:
+                        s = re.search(r"data-stat=\"split_type\".*?>(.*?)</", row)
+
                     if s and s.group(1) != '':
                         split_id = s.group(1)
                         curr_data = {}
                         year_splits[split_id] = curr_data
-                    s = re.search(r"data-stat=\"split_value\">(.*?)</", str(row))
+                    s = re.search(r"data-stat=\"split_value\">(.*?)</", row)
                     if s:
                         split_val = s.group(1)
-                        s = re.search(r"<a href=.*?>(.*)", split_val)
-                        if s:
-                            split_val = s.group(1)
-
-                    stats_scraped = re.findall(r"data-stat=\"(.*?)\".*?>(.*?)</", str(row))
+                        # minor optimization; no hyperlinks in advanced splits tables
+                        if table == '#stats':
+                            s = re.search(r"<a href=.*?>(.*)", split_val)
+                            if s:
+                                split_val = s.group(1)
+                    
+                    stats_scraped = re.findall(r"data-stat=\"(.*?)\".*?>(.*?)</", row)
+                    
                     for scraped_stat in stats_scraped:
                         stats[scraped_stat[0]] = scraped_stat[1]
+                    
+
                     # Remove split_id and split_value from stats
-                    stats.pop('split_id')
-                    stats.pop('split_value')
+                    if table == '#stats':
+                        stats.pop('split_id')
+                        stats.pop('split_value')
                     curr_data[split_val] = stats
+
                 i += 1
-        #remove redundent League data
-        splits_data[year].pop('League')
-    player.stats['splits'] = splits_data
+        
+        parse_time_end = time.time()
+        avg_get_time += (get_time_end - get_time_start)
+        avg_parse_time += (parse_time_end - parse_time_start)
+        
+    end = time.time()
+    avg_get_time /= len(splits)
+    avg_parse_time /= len(splits)
+    if test_mode:
+        print("Splits total time is %.2f seconds" % (end - start))
+        print("Splits average get time is %.2f seconds" % avg_get_time)
+        print("Splits average parse time is %.2f seconds" % avg_parse_time)
 
     return
 
-def scrape_fantasy(player, fantasy):
+def scrape_fantasy(player, fantasy, session, test_mode):
+    start = time.time()
+
     for year in fantasy.keys():
-        r = requests.get(fantasy[year])
+        r = session.get(fantasy[year])
         soup = BeautifulSoup(r.text, features='lxml')
         year_stats = {}
 
@@ -193,5 +258,12 @@ def scrape_fantasy(player, fantasy):
             game = week_stats["game_num"]
             year_stats[game] = week_stats
             i += 1
-        player.stats['fantasy'][year] = year_stats
+        year_obj = player.get_year(year)
+        year_obj.stats['fantasy'] = year_stats
+        #player.stats['fantasy'][year] = year_stats
+    
+    end = time.time()
+    if test_mode:
+        print("Fantasy stats scrape time is %.2f seconds" % (end - start))
+
     return

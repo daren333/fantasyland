@@ -1,20 +1,38 @@
 from os import path, stat
 
+
+class Team:
+    def __init__(self, abbrev, year, o_line, rush_d, pass_d):
+        pass
+
+
+class Year:
+    def __init__(self, year, teams):
+        self.year = year
+        self.teams = teams
+        self.stats = {'gamelogs' : {}, 'splits' : {}, 'fantasy' : {}}
+        
+
 class Player:
-    def __init__(self, pid, fn, ln, pos, sal, team, injury_status, url=None):
+    def __init__(self, pid, fn, ln, pos, sal, team):
         self.pid = pid
         self.fn = fn
         self.ln = ln
         self.pos = pos
-        self.sal = sal
+        self.salary = sal
         self.team = team
-        self.injury_status = injury_status
-        self.stats = {'gamelogs' : {}, 'splits' : {}, 'fantasy' : {}}
+        self.years = []
+
+    def get_year(self, year):
+        for year_obj in self.years:
+            if year_obj.year == year:
+                return year_obj
 
     def write_stats(self, db):
-        for stat_type, v in self.stats.items():
-            for year, stats_dict in v.items():
-                filepath = '%s/%s_%s.csv'%(db, stat_type, year)
+        for year in self.years:
+            for stat_type, stats_dict in year.stats.items():
+            #for year, stats_dict in v.items():
+                filepath = '%s/%s_%s.csv'%(db, stat_type, year.year)
                 
                 with open(filepath, 'w') as f:
                     if stat_type == 'splits':
@@ -23,7 +41,7 @@ class Player:
                             f.write('pid, first, last, pos, team, ')
                             for stat_header, splits in stats_dict.items():
                                 for split in splits.keys():
-                                    f.write('%s-%s, ' % (stat_header, split))
+                                    f.write('%s_%s, ' % (stat_header, split))
                             f.write('\n')
                         #write stats to csv
                         for stat_header, splits in stats_dict.items():
