@@ -3,6 +3,8 @@ import csv
 import requests
 from classes import Player, Game
 from scrape_stats import craft_url, scrape_playerdata
+from writer import write_to_db
+
 
 def main(args):
     if args.test_mode:
@@ -24,15 +26,12 @@ def main(args):
                     players.append(Player(pid, fn, ln, pos, salary, team))
 
         
-        #for player in players:
-        player = players[3]
-        soup = craft_url(player, test_mode=True)
-        scrape_playerdata(player, soup, test_mode=True)
-        player.write_stats(args.output_dir)
-
-
-        
-        
+        for player in players:
+        #player = players[3]
+            soup = craft_url(player, test_mode=True)
+            scrape_playerdata(player, soup, test_mode=True)
+            write_to_db(players, args.output_dir)
+        #player.write_stats(args.output_dir)
 
 
 if __name__ == "__main__":
@@ -53,4 +52,3 @@ if __name__ == "__main__":
                             help="enable test mode")
     args = parser.parse_args()
     main(args) 
-    

@@ -1,4 +1,46 @@
-from os import path, stat
+from os import path
+
+
+class Season:
+    def __init__(self, year):
+        self.year = year
+
+    def __repr__(self):
+        return 'Season(%s)' % self.year
+        
+
+class TeamSeason(Season):
+    def __init__(self, year, city, name, abbrev, players):
+        super().__init__(year)
+        self.city = city
+        self.name = name
+        self.abbrev = abbrev
+        self.players = players
+
+
+    def __str__(self):
+        return '%s %s (%s) team stats for %s season' % (self.city, self.name, self.abbrev, self.year)
+
+    # allows indexing by last name or pid: 
+    # ex. TeamSeason['Jones'] will return a list containing all players whose last name is Jones
+    def __getitem__(self, p):
+        if p.isalpha():
+            return [player for player in self.players if player.ln == p]
+        else:
+            return [pid for pid in self.players if pid == p]
+
+
+class PlayerSeason(Season):
+    def __init__(self, year, teams):
+        super().__init__(year)
+        self.teams = teams
+        self.stats = {'gamelogs': {}, 'splits': {}, 'fantasy': {}}
+
+    def __str__(self):
+        return 'Player stats for %s season while playing for %s' % (self.year, self.teams)
+
+    def __getitem__(self, stat):
+        return self.stats[stat]
 
 
 class Team:
@@ -10,18 +52,27 @@ class Year:
     def __init__(self, year, teams):
         self.year = year
         self.teams = teams
-        self.stats = {'gamelogs' : {}, 'splits' : {}, 'fantasy' : {}}
+        self.stats = {'gamelogs': {}, 'splits': {}, 'fantasy': {}}
+
+    def __repr__(self):
+        return 'Year(%s)' % self.year
         
+    def __str__(self):
+        return 'Player stats for %s while playing for %s' % (self.year, self.teams)
+
 
 class Player:
-    def __init__(self, pid, fn, ln, pos, sal, team):
+    def __init__(self, pid, fn, ln, pos, sal, curr_team):
         self.pid = pid
         self.fn = fn
         self.ln = ln
         self.pos = pos
         self.salary = sal
-        self.team = team
+        self.curr_team = curr_team
         self.years = []
+
+    def __repr__(self):
+        return 'Player(%s, %s, %s, %s, %s)' % (self.pid, self.ln, self.fn, self.pos, self.team)
 
     def get_year(self, year):
         for year_obj in self.years:
