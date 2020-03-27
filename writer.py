@@ -65,8 +65,8 @@ def write_season_stats_to_json_str(player):
     :return: String to write to file
     """
     write_str = ""
-    write_str += '{\"pid\": \"%s\", \"ln\": \"%s\", \"fn\": \"%s\", \"pos\": \"%s\", \"curr_team\": \"%s\",' \
-                  % (player.pid, player.ln, player.fn, player.pos, player.curr_team)
+    write_str += '\"%s\" : {\"pid\": \"%s\", \"ln\": \"%s\", \"fn\": \"%s\", \"pos\": \"%s\", \"curr_team\": \"%s\",' \
+                  % (player.pid, player.pid, player.ln, player.fn, player.pos, player.curr_team)
     write_str += '\"seasons\": ['
     for year in player.years:
         season = player.get_year(year.year)
@@ -99,9 +99,12 @@ def write_season_stats_to_json_str(player):
 
 def write_to_db(players, db):
     filepath = '%s/%s.json' % (db, 'test')
-    player_str = ""
     with open(filepath, 'w') as f:
-        for player in players:
-            f.write(write_season_stats_to_json_str(player))
+        f.write('{')
+        # Write all but last player with trailing commas
+        for player in players[:-1]:
+            f.write(write_season_stats_to_json_str(player) + ',')
+        # Write last player without trailing comma
+        f.write(write_season_stats_to_json_str(players[-1]) + '}')
 
 
