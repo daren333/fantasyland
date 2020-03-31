@@ -10,12 +10,16 @@ from async_classes import Player, Game, PlayerSeason
 from async_writer import write_to_db
 
 
-async def scrape_player(player, db_path, test_mode=True):
+async def bound_scrape_player(sem, player, session, db_path, test_mode=True):
+    async with sem:
+        await scrape_player(player, session, db_path, test_mode=test_mode)
+
+
+async def scrape_player(player, session, db_path, test_mode=True):
     # Set timeout to 15 minutes instead of default 5
-    async with ClientSession(timeout=ClientTimeout(15*60)) as session:
-        soup = await craft_url(player, session, test_mode)
-        await scrape_playerdata(player, session, soup, test_mode)
-        await write_to_db(player, db_path)
+    soup = await craft_url(player, session, test_mode)
+    await scrape_playerdata(player, session, soup, test_mode)
+    #await write_to_db(player, db_path)
 
 
 def get_team_id(pos, soup):

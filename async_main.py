@@ -5,7 +5,7 @@ from aiohttp import ClientSession, ClientTimeout
 import csv
 import time
 from async_classes import Player, Game
-from async_scrape_stats import craft_url, scrape_playerdata, scrape_player
+from async_scrape_stats import craft_url, scrape_playerdata, scrape_player, bound_scrape_player
 from async_writer import write_to_db
 
 
@@ -31,9 +31,16 @@ async def main(args):
 
         start_time = time.time()
         tasks = []
-        for player in players:
-            tasks.append(scrape_player(player, args.output_dir, test_mode=args.test_mode))
-        await asyncio.gather(*tasks)
+        sem = asyncio.Semaphore(1000)
+        async with ClientSession(timeout=ClientTimeout(15*60)) as session:
+            for player in players:
+                task = asyncio.create_task(scrape_player(player, session, args.output_dir, test_mode=args.test_mode))
+                #task = asyncio.ensure_future(bound_scrape_player(sem, player, session, args.output_dir, test_mode=args.test_mode))
+                #task = bound_scrape_player(sem, player, session, args.output_dir, test_mode=args.test_mode)
+                tasks.append(task)
+            for res in asyncio.as_completed(tasks):
+                compl = await res
+                await write_to_db(compl, args.output_dir)
         end_time = time.time()
         print("Total scrape time: %f" % (end_time - start_time))
 

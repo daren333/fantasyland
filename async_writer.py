@@ -101,7 +101,7 @@ async def write_season_stats_to_json_str(player):
 async def write_to_db(player, db):
     filepath = '%s/%s.json' % (db, 'test_async')
     async with aiofiles.open(filepath, 'a+') as f:
-        await f.write('{')
+        f.write('{')
         p = await write_season_stats_to_json_str(player)
         await f.write(p)
 

@@ -25,19 +25,16 @@ def main(args):
                     injury_status = row[11]
                     players.append(Player(pid, fn, ln, pos, salary, team))
 
-        
         for player in players:
-        #player = players[3]
             soup = craft_url(player, test_mode=True)
             scrape_playerdata(player, soup, test_mode=True)
             write_to_db(players, args.output_dir)
-        #player.write_stats(args.output_dir)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-c", "--csv_file", 
+    parser.add_argument("-c", "--csv_file",
                             type = str,
                             default='sample_fanduel_sheet.csv',
                             help="path to csv file containing players")
