@@ -1,16 +1,20 @@
 import argparse
+import asyncio
+import aiofiles
+from aiohttp import ClientSession, ClientTimeout
 import csv
-import requests
-from classes import Player, Game
-from scrape_stats import craft_url, scrape_playerdata
-from writer import write_to_db
+import time
+from async_classes import Player, Game
+from async_scrape_stats import craft_url, scrape_playerdata, scrape_player, bound_scrape_player
+from async_writer import write_to_db
 
 
-def main(args):
+async def main(args):
     if args.test_mode:
         csv_path = args.csv_file
         players = []
 
+        # Create list of players from input csv
         with open(csv_path) as csv_file:
             reader = csv.reader(csv_file)
             for row in reader:
@@ -25,16 +29,25 @@ def main(args):
                     injury_status = row[11]
                     players.append(Player(pid, fn, ln, pos, salary, team))
 
-        for player in players:
-            soup = craft_url(player, test_mode=True)
-            scrape_playerdata(player, soup, test_mode=True)
-            write_to_db(players, args.output_dir)
-
+        start_time = time.time()
+        tasks = []
+        sem = asyncio.Semaphore(1000)
+        async with ClientSession(timeout=ClientTimeout(15*60)) as session:
+            for player in players:
+                task = asyncio.create_task(scrape_player(player, session, args.output_dir, test_mode=args.test_mode))
+                #task = asyncio.ensure_future(bound_scrape_player(sem, player, session, args.output_dir, test_mode=args.test_mode))
+                #task = bound_scrape_player(sem, player, session, args.output_dir, test_mode=args.test_mode)
+                tasks.append(task)
+            for res in asyncio.as_completed(tasks):
+                compl = await res
+                await write_to_db(compl, args.output_dir)
+        end_time = time.time()
+        print("Total scrape time: %f" % (end_time - start_time))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-c", "--csv_file",
+    parser.add_argument("-c", "--csv_file", 
                             type = str,
                             default='sample_fanduel_sheet.csv',
                             help="path to csv file containing players")
@@ -48,4 +61,4 @@ if __name__ == "__main__":
                             action="store_true", 
                             help="enable test mode")
     args = parser.parse_args()
-    main(args) 
+    asyncio.run(main(args))

@@ -1,8 +1,8 @@
-from os import path
-from classes import Player, PlayerSeason
+import aiofiles
+from async_classes import Player, PlayerSeason
 
 
-def write_gamelogs(stat_val):
+async def write_gamelogs(stat_val):
     gamelog_str = ""
     for week, v in stat_val.items():
         gamelog_str += '\"%s\": {' % week
@@ -19,7 +19,7 @@ def write_gamelogs(stat_val):
     return gamelog_str
 
 
-def write_fantasy(stat_val):
+async def write_fantasy(stat_val):
     fantasy_str = ""
     for week, v in stat_val.items():
         fantasy_str += '\"%s\": {' % week
@@ -36,7 +36,7 @@ def write_fantasy(stat_val):
     return fantasy_str
 
 
-def write_splits(stat_val):
+async def write_splits(stat_val):
     splits_str = ""
     for week, v in stat_val.items():
         splits_str += '\"%s\": {' % week
@@ -58,7 +58,7 @@ def write_splits(stat_val):
     return splits_str
 
 
-def write_season_stats_to_json_str(player):
+async def write_season_stats_to_json_str(player):
     """
     Takes in PlayerSeason and returns a string in JSON format to write to file.
     Main purpose is to deal with the fact that JSON won't allow trailing commas.
@@ -83,11 +83,11 @@ def write_season_stats_to_json_str(player):
         for stat_type, stat_val in season.stats.items():
             write_str += '\"%s\": {' % stat_type
             if stat_type == 'gamelogs':
-                write_str += write_gamelogs(stat_val)
+                write_str += await write_gamelogs(stat_val)
             elif stat_type == 'fantasy':
-                write_str += write_fantasy(stat_val)
+                write_str += await write_fantasy(stat_val)
             else:
-                write_str += write_splits(stat_val)
+                write_str += await write_splits(stat_val)
         # Remove trailing comma from stat_type
         write_str = write_str[:-1]
         write_str += '}},'
@@ -98,14 +98,10 @@ def write_season_stats_to_json_str(player):
     return write_str
 
 
-def write_to_db(players, db):
-    filepath = '%s/%s.json' % (db, 'test')
-    with open(filepath, 'w') as f:
+async def write_to_db(player, db):
+    filepath = '%s/%s.json' % (db, 'test_async')
+    async with aiofiles.open(filepath, 'a+') as f:
         f.write('{')
-        # Write all but last player with trailing commas
-        for player in players[:-1]:
-            f.write(write_season_stats_to_json_str(player))
-        # Write last player without trailing comma
-        f.write(write_season_stats_to_json_str(players[-1]) + '}')
-
+        p = await write_season_stats_to_json_str(player)
+        await f.write(p)
 
