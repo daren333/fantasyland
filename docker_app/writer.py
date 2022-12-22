@@ -1,9 +1,8 @@
-import jsonpickle
 from marshmallow import pprint
 
 from pymongo import MongoClient
 
-from docker_app.classes.Player import PlayerSchema
+from classes.Player import PlayerSchema
 
 
 def write_gamelogs(stat_val):
@@ -113,16 +112,16 @@ def write_to_db(player):
     #     # Write last player without trailing comma
     #     f.write(write_season_stats_to_json_str(players[-1]) + '}')
 
-    client = MongoClient("mongodb://root:example@localhost:27017/")
+    client = MongoClient("mongodb://root:example@mongodb:27017/")
     db = client["nfl"]
     players_db = db["players"]
     #for player in players:
     serialized_player = PlayerSchema().dump(player)
-    players_db.insert_one(serialized_player)
+    players_db.update_one({'_id': player.pid}, {"$set": serialized_player}, upsert=True)
 
 
 def read_from_db(pid):
-    client = MongoClient("mongodb://root:example@localhost:27017/")
+    client = MongoClient("mongodb://root:example@mongodb:27017/")
 
     db = client["nfl"]
     players_db = db["players"]

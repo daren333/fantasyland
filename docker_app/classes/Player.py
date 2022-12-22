@@ -1,10 +1,10 @@
 from os import path
 from marshmallow import Schema, fields
-from docker_app.classes.PlayerSeason import PlayerSeasonSchema
+from classes.PlayerSeason import PlayerSeasonSchema
 
 
 class Player:
-    def __init__(self, pid, fn, ln, pos, curr_team, age=0.0, sal=0):
+    def __init__(self, pid, fn, ln, pos, curr_team, sal=0, age=0.0):
         self._id = pid
         self.pid = pid
         self.fn = fn

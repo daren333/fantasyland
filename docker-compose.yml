@@ -1,0 +1,68 @@
+services:
+  app:
+    build:
+      context: ./docker_app
+      dockerfile: Dockerfile
+
+    #command: ls
+    #command: pip install -r docker_app/requirements.txt && python docker_app/docker_app/main.py -t
+    ports:
+      - 3000:3306
+    volumes:
+      - ./:/docker_app
+    environment:
+      MONGO_HOST: mongo
+      MONGO_USER: root
+      MONGO_PASSWORD: secret
+      MONGO_DB: nfl
+    depends_on:
+      - mysql
+
+  mysqldb:
+    image: mysql
+    restart: always
+    ports:
+      - 3306:3306
+    volumes:
+      - mysql:/var/lib/mysql
+      - mysql_config:/etcmysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=example
+
+#  postgres:
+#    image: postgres:14.1-alpine
+#    restart: always
+#    environment:
+#      - POSTGRES_USER=postgres
+#      - POSTGRES_PASSWORD=postgres
+#    ports:
+#      - '5432:5432'
+#    volumes:
+#      - db:/var/lib/postgresql/data
+
+#  mongo:
+#    image: mongo
+#    container_name: mongodb
+#    ports:
+#      - 27017:27017
+#    volumes:
+#      - nfl-mongo-data:/data/db
+#    environment:
+#      MONGO_INITDB_ROOT_USERNAME: root
+#      MONGO_INITDB_ROOT_PASSWORD: example
+
+#  grafana:
+#    image: grafana/grafana:7.5.7
+#    ports:
+#      - 3000:3000
+#    restart: unless-stopped
+#    volumes:
+#      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+#      - grafana-data:/var/lib/grafana
+
+
+volumes:
+  mysql:
+  mysql_config:
+#  nfl-mongo-data:
+#  grafana-data:

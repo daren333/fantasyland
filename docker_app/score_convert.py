@@ -1,4 +1,3 @@
-import re
 
 fanduel_settings = {'PaTD':4, 'PaY':0.04, 'PaI':-1,
 					'Re': 0.5, 'ReY':0.1, 'ReTD':6,

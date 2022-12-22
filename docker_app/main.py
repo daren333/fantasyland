@@ -3,18 +3,19 @@ import csv
 import re
 
 from pymongo import MongoClient
+from mysql import connector
 
-from docker_app.classes.Player import Player
-from docker_app.scrape_stats import craft_url, scrape_playerdata, fix_team_abbrev
-from docker_app.writer import write_to_db, write_single_csv_headers_fantasy, write_to_single_csv, \
+from .classes.Player import Player
+from .scrape_stats import craft_url, scrape_playerdata, fix_team_abbrev
+from .writer import write_to_db, write_single_csv_headers_fantasy, write_to_single_csv, \
     write_qb_gamestats_to_csv, write_flex_gamestats_to_csv, read_from_db
-from docker_app.score_convert import calc_dynasty_scoring
+from .score_convert import calc_dynasty_scoring
 
 
 def main(args):
-    client = MongoClient("mongodb://root:example@localhost:27017/")
 
     if args.test_mode:
+
         csv_path = args.csv_file
         players = []
 
@@ -38,7 +39,7 @@ def main(args):
             calc_dynasty_scoring(player)
             write_to_db(player)
 
-            read_from_db("43968-58462")
+            #read_from_db("43968-58462")
 
     if args.dynasty_mode:
         scrape_years = ['2015', '2016', '2017', '2018', '2019']
@@ -99,7 +100,7 @@ if __name__ == "__main__":
                         help="path to csv file containing players")
     parser.add_argument("-c", "--csv_file",
                             type = str,
-                            default='sample_one_player_sheet.csv',
+                            default='sample_three_player_sheet.csv',
                             help="path to csv file containing players")
     
     parser.add_argument("-o", "--output_dir",
@@ -113,5 +114,9 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--dynasty_mode",
                         action="store_true",
                         help="enable test mode")
+    parser.add_argument("-db", "--database",
+                        type=str,
+                        default="mysql",
+                        help="which db to use - options: mysql, mongodb, postgres. Defaults to mysql")
     args = parser.parse_args()
     main(args) 

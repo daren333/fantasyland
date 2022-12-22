@@ -1,5 +1,5 @@
 from marshmallow import Schema, fields
-from docker_app.classes.Player import PlayerSchema
+from classes.Player import PlayerSchema
 
 
 class TeamSeason:
