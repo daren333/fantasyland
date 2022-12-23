@@ -2,9 +2,10 @@ from bs4 import BeautifulSoup, SoupStrainer
 import requests
 import re
 import time
+import pandas as pd
 
-from classes.PlayerSeason import PlayerSeason
-
+from docker_app.classes.PlayerSeason import PlayerSeason
+from docker_app.config import team_map
 
 # Aligns team abbreviations w/ pro football ref abbrevs
 def fix_team_abbrev(team):
@@ -28,19 +29,15 @@ def fix_team_abbrev(team):
         return team
 
 
-def get_team_id(pos, soup):
+def convert_to_short_team_name(team_name):
+    return team_map[team_name]
 
-    if pos == 'QB':
-        team_div = soup.select('#passing\.2019 > td:nth-child(3) > a')
-        td = re.search(r">(\w+)<", str(team_div))
-    else:
-        team_div = soup.select('#stats\.1 > td:nth-child(3) > a')
-        td = re.search(r">(\w+)<", str(team_div))
-        if not td:
-            team_div = soup.select('#receiving_and_rushing\.2019 > td:nth-child(3) > a')
-            td = re.search(r">(\w+)<", str(team_div))
+
+def get_team_id(soup):
+    team_div = soup.select("#meta > div:nth-child(2) > p:nth-child(5) > span > a")
+    td = re.search(r">(\w+\s?\w+)<", str(team_div))
     if td:
-        return td.group(1)
+        return convert_to_short_team_name(td.group(1))
     else:
         return None
 
@@ -88,8 +85,8 @@ def craft_url(player, max_retries = 5, test_mode = False):
         
             if pd:
                 pos = pd.group(1)
-                team = get_team_id(pos, soup)
-                full_web_name = soup.select('#meta > div:nth-child(2) > p:nth-child(2) > strong')[0].contents[0].strip()
+                team = get_team_id(soup)
+                full_web_name = soup.select('#meta > div:nth-child(2) > h1 > span')[0].contents[0].strip()
                 full_name = '%s %s' % (player.fn, player.ln)
                 if pos == player.pos and team == player.curr_team and full_name in full_web_name:
                     print("last name: %s\n team: %s\n position: %s" % (player.ln, team, pos))
@@ -123,12 +120,13 @@ def craft_url(player, max_retries = 5, test_mode = False):
 def scrape_playerdata(player, soup, years_to_scrape=None, test_mode=False):
     start = time.time()
     gamelogs = {}
+    advanced_gamelogs = {}
     splits = {}
     fantasy = {}
     try:
         gamelogs_html = soup.select("#inner_nav > ul > li:nth-child(2) > div")
-        splits_html = soup.select("#inner_nav > ul > li.condensed.hasmore > div > p:nth-child(6)")
-        fantasy_html = soup.select("#inner_nav > ul > li.condensed.hasmore > div > p:nth-child(8)")
+        splits_html = soup.select("#inner_nav > ul > li:nth-child(3)")
+        fantasy_html = soup.select("#inner_nav > ul > li:nth-child(4)")
 
         gamelog_links = re.findall(r"href=\"(.*/gamelog/\d{4}/)\">(\d{4})<", str(gamelogs_html))
         for link in gamelog_links:
@@ -136,6 +134,7 @@ def scrape_playerdata(player, soup, years_to_scrape=None, test_mode=False):
             year = link[1]
             if (years_to_scrape and year in years_to_scrape) or not years_to_scrape:
                 gamelogs[year] = "https://www.pro-football-reference.com" + url
+                advanced_gamelogs[year] = "https://www.pro-football-reference.com" + url + "advanced"
 
         splits_links = re.findall(r"href=\"(.*/splits/\d{4}/)\">(\d{4})<", str(splits_html))
         for link in splits_links:
@@ -157,8 +156,9 @@ def scrape_playerdata(player, soup, years_to_scrape=None, test_mode=False):
 
         with requests.Session() as session:
             scrape_gamelogs(player, gamelogs, session, test_mode=test_mode)
+            scrape_advanced_gamelogs(player, advanced_gamelogs, session, test_mode=test_mode)
             scrape_fantasy(player, fantasy, session, test_mode=test_mode)
-            #scrape_splits(player, splits, session, test_mode=test_mode)
+            scrape_splits(player, splits, session, test_mode=test_mode)
 
         end = time.time()
         if test_mode:
@@ -203,6 +203,60 @@ def scrape_gamelogs(player, gamelogs, session, test_mode):
         print("Gamelog scrape time is %.2f seconds" % (end - start))
     return
 
+
+
+def scrape_advanced_gamelogs(player, adv_gamelogs, session, test_mode):
+    start = time.time()
+
+    for year in adv_gamelogs.keys():
+        time.sleep(.5)
+        r = session.get(adv_gamelogs[year])
+        strainer = SoupStrainer(id='content')
+        soup = BeautifulSoup(r.text, features='lxml', parse_only=strainer)
+        year_stats = {}
+        year_passing_stats = {}
+
+        i = 1
+        while soup.select("#advanced_rushing_and_receiving > tbody > tr:nth-of-type(%d)" % i):
+            week_stats = {}
+            row = str(soup.select("#advanced_rushing_and_receiving > tbody > tr:nth-of-type(%d)" % i))
+            stats = re.findall(r"data-stat=\"(.*?)\".*?>(.*?)</", row)
+            for stat in stats:
+                s = re.search(r"<a href=.*?>(.*)", stat[1])
+                if s:
+                    week_stats[stat[0]] = s.group(1)
+                else:
+                    week_stats[stat[0]] = stat[1]
+            game = week_stats["game_num"]
+            year_stats[game] = week_stats
+            i += 1
+
+        # get passing stats
+        if player.pos == "QB":
+            i = 1
+            while soup.select("#advanced_passing > tbody > tr:nth-of-type(%d)" % i):
+                week_passing_stats = {}
+                row = str(soup.select("#advanced_passing > tbody > tr:nth-of-type(%d)" % i))
+                stats = re.findall(r"data-stat=\"(.*?)\".*?>(.*?)</", row)
+                for stat in stats:
+                    s = re.search(r"<a href=.*?>(.*)", stat[1])
+                    if s:
+                        week_passing_stats[stat[0]] = s.group(1)
+                    else:
+                        week_passing_stats[stat[0]] = stat[1]
+                game = week_passing_stats["game_num"]
+                year_passing_stats[game] = week_passing_stats
+                i += 1
+
+        year_obj = player.get_year(year)
+        year_obj.stats['adv_gamelogs'] = {"rush_rec_stats": year_stats, "passing_stats": year_passing_stats}
+        # add teams played for for each week
+        [year_obj.teams.add(year_stats[week]['team']) for week in year_stats]
+
+    end = time.time()
+    if test_mode:
+        print("Advanced Gamelog scrape time is %.2f seconds" % (end - start))
+    return
 
 def scrape_splits(player, splits, session, test_mode):
     start = time.time()
