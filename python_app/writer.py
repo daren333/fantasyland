@@ -1,3 +1,4 @@
+import boto3
 from marshmallow import pprint
 
 from pymongo import MongoClient
@@ -101,9 +102,19 @@ def write_season_stats_to_json_str(player):
     return write_str
 
 
-def print_playerdata(player):
-    print("playerdata: ")
-    print(player)
+def write_to_dynamodb(player):
+    # boto3.setup_default_session()
+    # client = boto3.resource("dynamodb").Table("fantatsyland")
+    # serialized_player = PlayerSchema().dump(player)
+    # client.put_item(Item=serialized_player)
+
+    table_name = "fantasyland"
+    dynamodb_resource = boto3.resource("dynamodb")
+    table = dynamodb_resource.Table(table_name)
+    serialized_player = PlayerSchema().dump(player)
+    response = table.put_item(Item=serialized_player)
+    print(response)
+
 
 def write_to_db(player):
     #filepath = '%s/%s.json' % (db, 'test')
@@ -117,7 +128,7 @@ def write_to_db(player):
     #     f.write(write_season_stats_to_json_str(players[-1]) + '}')
 
     #client = MongoClient("mongodb://root:example@localhost:27017/")
-    client = MongoClient("mongodb://root:example@mongodb:27017/")
+    client = MongoClient("mongodb://root:example@localhost:27017/")
     db = client["nfl"]
     players_db = db["players"]
     #for player in players:
@@ -126,7 +137,7 @@ def write_to_db(player):
 
 
 def read_from_db(pid):
-    client = MongoClient("mongodb://root:example@mongodb:27017/")
+    client = MongoClient("mongodb://root:example@localhost:27017/")
 
     db = client["nfl"]
     players_db = db["players"]

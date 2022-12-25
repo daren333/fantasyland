@@ -1,14 +1,12 @@
 import argparse
 import csv
 import re
-import uuid
 
 from classes.Player import Player
 from scrape_stats import craft_url, scrape_playerdata, fix_team_abbrev
 from writer import write_to_db, write_single_csv_headers_fantasy, write_to_single_csv, \
-    write_qb_gamestats_to_csv, write_flex_gamestats_to_csv, read_from_db
+    write_qb_gamestats_to_csv, write_flex_gamestats_to_csv, read_from_db, write_to_dynamodb
 from score_convert import calc_dynasty_scoring
-
 
 
 def read_fantasy_pros_rank_sheet(csv_path):
@@ -31,29 +29,13 @@ def main(args):
 
     if args.test_mode:
 
-        # csv_path = args.csv_file
-        # players = []
-        #
-        # with open(csv_path) as csv_file:
-        #     reader = csv.reader(csv_file)
-        #     for row in reader:
-        #         # Skip header row
-        #         if row[0] != 'Id':
-        #             pid = row[0]
-        #             pos = row[1]
-        #             fn = row[2]
-        #             ln = row[4]
-        #             salary = row[6]
-        #             team = row[9]
-        #             injury_status = row[11]
-        #             players.append(Player(pid, fn, ln, pos, team, salary))
         players = read_fantasy_pros_rank_sheet(args.csv_file)
 
         for player in players:
             soup = craft_url(player, test_mode=True)
             scrape_playerdata(player, soup, test_mode=True)
             calc_dynasty_scoring(player)
-            write_to_db(player)
+            write_to_dynamodb(player)
             print("finit")
 
 
@@ -103,7 +85,6 @@ def main(args):
                     print('Number %d finished' % i)
             else:
                 print('Could not get scrape data for %s %s' % (player.fn, player.ln))
-                print(soup)
         write_qb_gamestats_to_csv(players[:59], args.output_dir)
         write_flex_gamestats_to_csv(players[59:], args.output_dir)
 

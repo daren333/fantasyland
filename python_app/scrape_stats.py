@@ -74,14 +74,14 @@ def craft_url(player, max_retries = 5, test_mode = False):
                 print('404 received for URL: %s\nincrementing ref_num and trying again' % url)
                 ref_num += 1
                 url = '%s/%s/%s%s0%d.htm' % (base_url, last_initial, ln_four, fn_two, ref_num)
-                time.sleep(1)
+                time.sleep(.5)
                 r = session.get(url)
             else:
                 print('Max number of retries attempted. failed to get page for %s %s' % (player.fn, player.ln))
                 return -1
 
         while pos != player.pos or team != player.curr_team:
-            time.sleep(1)
+            time.sleep(.5)
             r = session.get(url)
             soup = BeautifulSoup(r.text, features='lxml')
             pos_div = soup.select('#meta > div:nth-child(2) > p:nth-child(3)')
@@ -102,7 +102,6 @@ def craft_url(player, max_retries = 5, test_mode = False):
 
                     else:
                         print('Max number of retries attempted. failed to get page for %s %s' % (player.fn, player.ln))
-                        print(soup)
                         return -2
             else:
                 if ref_num <= max_retries:
@@ -177,7 +176,7 @@ def scrape_gamelogs(player, gamelogs, session, test_mode):
     start = time.time()
 
     for year in gamelogs.keys():
-        time.sleep(1)
+        time.sleep(.5)
         r = session.get(gamelogs[year])
         strainer = SoupStrainer(id='all_stats')
         soup = BeautifulSoup(r.text, features='lxml', parse_only=strainer)
@@ -214,7 +213,7 @@ def scrape_advanced_gamelogs(player, adv_gamelogs, session, test_mode):
     start = time.time()
 
     for year in adv_gamelogs.keys():
-        time.sleep(1)
+        time.sleep(.5)
         r = session.get(adv_gamelogs[year])
         strainer = SoupStrainer(id='content')
         soup = BeautifulSoup(r.text, features='lxml', parse_only=strainer)
@@ -270,7 +269,7 @@ def scrape_splits(player, splits, session, test_mode):
     splits_data = {}
 
     for year in splits.keys():
-        time.sleep(1)
+        time.sleep(.5)
         year_obj = player.get_year(year)
         year_splits = {}
         year_obj.stats['splits'] = year_splits
@@ -353,7 +352,7 @@ def scrape_fantasy(player, fantasy, session, test_mode):
     start = time.time()
 
     for year in fantasy.keys():
-        time.sleep(1)
+        time.sleep(.5)
         r = session.get(fantasy[year])
         strainer = SoupStrainer(id='all_player_fantasy')
         soup = BeautifulSoup(r.text, features='lxml', parse_only=strainer)
