@@ -4,20 +4,28 @@ import json
 import mysql.connector
 import pandas as pd
 from mysql.connector import errorcode
-
+from bs4 import BeautifulSoup, SoupStrainer
+import requests
 
 def main(args):
-    connect_to_db()
-    # if args.init_db:
-    #     init_db()
-    # fp_ranks = pd.read_html("https://fantasydata.com/nfl/rankings")
-    #
-    # #player = pd.read_html("https://www.pro-football-reference.com/players/L/LikeIs00.htm")
-    # cursor = get_db_cursor()
-    # write_to_db()
-    #
-    # print("done")
-    # cursor.close()
+
+    url = "https://www.fantasypros.com/nfl/rankings/ros-overall.php"
+    with requests.Session() as session:
+        r = session.get(url)
+        strainer = SoupStrainer(id='ranking-table')
+        soup = BeautifulSoup(r.text, features='lxml', parse_only=strainer)
+
+        i = 1
+        while soup.select("#ranking-table > tbody > tr:nth-child(%d)" % i):
+            row = soup.select("#ranking-table > tbody > tr:nth-child(%d)" % i)
+            name_soup = soup.select("#ranking-table > tbody > tr:nth-child(1) > td:nth-child(3) > div > a:nth-child(1)")
+            team_soup = soup.select("#ranking-table > tbody > tr:nth-child(1) > td:nth-child(3) > div > span")
+            pos_soup = soup.select("#ranking-table > tbody > tr:nth-child(1) > td:nth-child(4)")
+            print("done")
+
+    #connect_to_db()
+
+
 
 
 def connect_to_db():
