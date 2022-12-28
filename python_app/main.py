@@ -1,7 +1,11 @@
 import argparse
 import csv
+from ast import literal_eval
 from datetime import date
 
+import boto3
+
+from python_app import config
 from python_app.classes.Player import Player
 from python_app.scrape_stats import craft_url, scrape_playerdata, fix_team_abbrev
 from python_app.writer import write_to_db, write_single_csv_headers_fantasy, write_to_single_csv, \
@@ -21,7 +25,26 @@ def read_fantasy_pros_rank_sheet(csv_path):
                 ln = row[1].split()[1]
                 team = fix_team_abbrev(row[2])
                 pos = row[3][:2]
-                players.append(Player(pid, fn, ln, pos, team))
+                players.append(Player(fn, ln, pos, team))
+    return players
+
+
+def get_players_from_sqs():
+    sqs_client = boto3.resource("sqs")
+    queue = sqs_client.get_queue_by_name(QueueName=config.sqs_queue_name)
+    messages = queue.receive_messages(MaxNumberOfMessages=1)
+
+    players = []
+    for message in messages:
+        player_dict = literal_eval(message.body)
+        player = Player(pid=player_dict["pid"],
+                        fn=player_dict["fn"],
+                        ln=player_dict["ln"],
+                        pos=player_dict["pos"],
+                        curr_team=player_dict["curr_team"])
+        players.append(player)
+        message.delete()
+
     return players
 
 
@@ -30,6 +53,8 @@ def main(args):
     players = []
     if args.test_mode:
         players = read_fantasy_pros_rank_sheet(args.csv_file)
+    else:
+        players = get_players_from_sqs()
 
     # only scrape current year's data if not in full scrape mode
     years_to_scrape = None

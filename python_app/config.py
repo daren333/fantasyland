@@ -69,6 +69,11 @@ team_map = {
     "Washington Commanders": "WAS"
 }
 
+s3_bucket = "s3://fantasyland-bucket-1"
+s3_key = "player_input_lists/FantasyPros_2022_Ros_ALL_Rankings.csv"
+
+sqs_queue_name = "fantasyland-queue"
+
 # RDS
 mysql_user = env.get("MYSQL_USER", "root")
 mysql_pw = get_secret()
@@ -86,7 +91,7 @@ mysql_db = env.get("MYSQL_DB", "nfl")
 sql_table_configs = {
     "player_info_table": ("CREATE TABLE IF NOT EXISTS `player_info_table` ("
                           "  `pid` varchar(80) NOT NULL,"
-                          "  `fn` TEXT NOT NULL,"
+                          "  `fn` TEXT NOT NULL," 
                           "  `ln` TEXT NOT NULL,"
                           "  `pos` TEXT NOT NULL,"
                           "  `team` TEXT NOT NULL,"
@@ -96,6 +101,8 @@ sql_table_configs = {
 
     "gamelog_table": ("CREATE TABLE IF NOT EXISTS `gamelog_table` ("
                       "`pid` VARCHAR(200),"
+                      "`fn` TEXT NOT NULL," 
+                      "`ln` TEXT NOT NULL,"
                       "`ranker` VARCHAR(200),"
                       "`game_date` VARCHAR(200),"
                       "`game_num` VARCHAR(200),"
@@ -163,6 +170,8 @@ sql_table_configs = {
 
     "fantasy_table": ("CREATE TABLE IF NOT EXISTS `fantasy_table` ("
                       "`pid` VARCHAR(200),"
+                      "`fn` TEXT NOT NULL," 
+                      "`ln` TEXT NOT NULL,"
                       "`ranker` VARCHAR(200),"
                       "`game_num` VARCHAR(200),"
                       "`game_date` VARCHAR(200),"
@@ -206,11 +215,15 @@ sql_table_configs = {
 
     "dynasty_scoring_table": ("CREATE TABLE IF NOT EXISTS `dynasty_scoring_table` ("
                               "`pid` VARCHAR(200),"
+                              "`fn` TEXT NOT NULL," 
+                              "`ln` TEXT NOT NULL,"
                               "`0` VARCHAR(200)"
                               ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin"),
 
     "adv_rush_rec_table": ("CREATE TABLE IF NOT EXISTS `adv_rush_rec_table` ("
                            "`pid` VARCHAR(200),"
+                           "`fn` TEXT NOT NULL," 
+                           "`ln` TEXT NOT NULL,"
                            "`ranker` VARCHAR(200),"
                            "`game_date` VARCHAR(200),"
                            "`game_num` VARCHAR(200),"
@@ -250,6 +263,8 @@ sql_table_configs = {
 
     "adv_pass_table": ("CREATE TABLE IF NOT EXISTS `adv_pass_table` ("
                        "`pid` VARCHAR(200),"
+                       "`fn` TEXT NOT NULL," 
+                       "`ln` TEXT NOT NULL,"
                        "`ranker` VARCHAR(200),"
                        "`game_date` VARCHAR(200),"
                        "`game_num` VARCHAR(200),"
@@ -287,6 +302,8 @@ sql_table_configs = {
 
     "splits_place_table": ("CREATE TABLE IF NOT EXISTS `splits_place_table` ("
                            "`pid` VARCHAR(200),"
+                           "`fn` TEXT NOT NULL," 
+                           "`ln` TEXT NOT NULL,"
                            "`g` VARCHAR(200),"
                            "`wins` VARCHAR(200),"
                            "`losses` VARCHAR(200),"
@@ -344,6 +361,8 @@ sql_table_configs = {
 
     "splits_result_table": ("CREATE TABLE IF NOT EXISTS `splits_result_table` ("
                             "`pid` VARCHAR(200),"
+                            "`fn` TEXT NOT NULL," 
+                            "`ln` TEXT NOT NULL,"
                             "`g` VARCHAR(200),"
                             "`wins` VARCHAR(200),"
                             "`losses` VARCHAR(200),"
@@ -401,6 +420,8 @@ sql_table_configs = {
 
     "splits_final_margin_table": ("CREATE TABLE IF NOT EXISTS `splits_final_margin_table` ("
                                   "`pid` VARCHAR(200),"
+                                  "`fn` TEXT NOT NULL," 
+                                  "`ln` TEXT NOT NULL,"
                                   "`g` VARCHAR(200),"
                                   "`wins` VARCHAR(200),"
                                   "`losses` VARCHAR(200),"
@@ -458,6 +479,8 @@ sql_table_configs = {
 
     "splits_month_table": ("CREATE TABLE IF NOT EXISTS `splits_month_table` ("
                            "`pid` VARCHAR(200),"
+                           "`fn` TEXT NOT NULL," 
+                           "`ln` TEXT NOT NULL,"
                            "`g` VARCHAR(200),"
                            "`wins` VARCHAR(200),"
                            "`losses` VARCHAR(200),"
@@ -515,6 +538,8 @@ sql_table_configs = {
 
     "splits_game_number_table": ("CREATE TABLE IF NOT EXISTS `splits_game_number_table` ("
                                  "`pid` VARCHAR(200),"
+                                 "`fn` TEXT NOT NULL," 
+                                 "`ln` TEXT NOT NULL,"
                                  "`g` VARCHAR(200),"
                                  "`wins` VARCHAR(200),"
                                  "`losses` VARCHAR(200),"
@@ -572,6 +597,8 @@ sql_table_configs = {
 
     "splits_day_table": ("CREATE TABLE IF NOT EXISTS `splits_day_table` ("
                          "`pid` VARCHAR(200),"
+                         "`fn` TEXT NOT NULL," 
+                         "`ln` TEXT NOT NULL,"
                          "`g` VARCHAR(200),"
                          "`wins` VARCHAR(200),"
                          "`losses` VARCHAR(200),"
@@ -629,6 +656,8 @@ sql_table_configs = {
 
     "splits_time_table": ("CREATE TABLE IF NOT EXISTS `splits_time_table` ("
                           "`pid` VARCHAR(200),"
+                          "`fn` TEXT NOT NULL," 
+                          "`ln` TEXT NOT NULL,"
                           "`g` VARCHAR(200),"
                           "`wins` VARCHAR(200),"
                           "`losses` VARCHAR(200),"
@@ -686,6 +715,8 @@ sql_table_configs = {
 
     "splits_conference_table": ("CREATE TABLE IF NOT EXISTS `splits_conference_table` ("
                                 "`pid` VARCHAR(200),"
+                                "`fn` TEXT NOT NULL," 
+                                "`ln` TEXT NOT NULL,"
                                 "`g` VARCHAR(200),"
                                 "`wins` VARCHAR(200),"
                                 "`losses` VARCHAR(200),"
@@ -743,6 +774,8 @@ sql_table_configs = {
 
     "splits_division_table": ("CREATE TABLE IF NOT EXISTS `splits_division_table` ("
                               "`pid` VARCHAR(200),"
+                              "`fn` TEXT NOT NULL," 
+                              "`ln` TEXT NOT NULL,"
                               "`g` VARCHAR(200),"
                               "`wins` VARCHAR(200),"
                               "`losses` VARCHAR(200),"
@@ -800,6 +833,8 @@ sql_table_configs = {
 
     "splits_opponent_table": ("CREATE TABLE IF NOT EXISTS `splits_opponent_table` ("
                               "`pid` VARCHAR(200),"
+                              "`fn` TEXT NOT NULL," 
+                              "`ln` TEXT NOT NULL,"
                               "`g` VARCHAR(200),"
                               "`wins` VARCHAR(200),"
                               "`losses` VARCHAR(200),"
@@ -857,6 +892,8 @@ sql_table_configs = {
 
     "splits_stadium_table": ("CREATE TABLE IF NOT EXISTS `splits_stadium_table` ("
                              "`pid` VARCHAR(200),"
+                             "`fn` TEXT NOT NULL," 
+                             "`ln` TEXT NOT NULL,"
                              "`g` VARCHAR(200),"
                              "`wins` VARCHAR(200),"
                              "`losses` VARCHAR(200),"
@@ -914,6 +951,8 @@ sql_table_configs = {
 
     "splits_down_table": ("CREATE TABLE IF NOT EXISTS `splits_down_table` ("
                           "`pid` VARCHAR(200),"
+                          "`fn` TEXT NOT NULL," 
+                          "`ln` TEXT NOT NULL,"
                           "`g` VARCHAR(200),"
                           "`wins` VARCHAR(200),"
                           "`losses` VARCHAR(200),"
@@ -971,6 +1010,8 @@ sql_table_configs = {
 
     "splits_yards_to_go_table": ("CREATE TABLE IF NOT EXISTS `splits_yards_to_go_table` ("
                                  "`pid` VARCHAR(200),"
+                                 "`fn` TEXT NOT NULL," 
+                                 "`ln` TEXT NOT NULL,"
                                  "`g` VARCHAR(200),"
                                  "`wins` VARCHAR(200),"
                                  "`losses` VARCHAR(200),"
@@ -1028,6 +1069,8 @@ sql_table_configs = {
 
     "splits_down_and_yards_to_go_table": ("CREATE TABLE IF NOT EXISTS `splits_down_and_yards_to_go_table` ("
                                           "`pid` VARCHAR(200),"
+                                          "`fn` TEXT NOT NULL," 
+                                          "`ln` TEXT NOT NULL,"
                                           "`g` VARCHAR(200),"
                                           "`wins` VARCHAR(200),"
                                           "`losses` VARCHAR(200),"
@@ -1085,6 +1128,8 @@ sql_table_configs = {
 
     "splits_field_position_table": ("CREATE TABLE IF NOT EXISTS `splits_field_position_table` ("
                                     "`pid` VARCHAR(200),"
+                                    "`fn` TEXT NOT NULL," 
+                                    "`ln` TEXT NOT NULL,"
                                     "`g` VARCHAR(200),"
                                     "`wins` VARCHAR(200),"
                                     "`losses` VARCHAR(200),"
@@ -1142,6 +1187,8 @@ sql_table_configs = {
 
     "splits_score_differential_table": ("CREATE TABLE IF NOT EXISTS `splits_score_differential_table` ("
                                         "`pid` VARCHAR(200),"
+                                        "`fn` TEXT NOT NULL," 
+                                        "`ln` TEXT NOT NULL,"
                                         "`g` VARCHAR(200),"
                                         "`wins` VARCHAR(200),"
                                         "`losses` VARCHAR(200),"
@@ -1199,6 +1246,8 @@ sql_table_configs = {
 
     "splits_quarter_table": ("CREATE TABLE IF NOT EXISTS `splits_quarter_table` ("
                              "`pid` VARCHAR(200),"
+                             "`fn` TEXT NOT NULL," 
+                             "`ln` TEXT NOT NULL,"
                              "`g` VARCHAR(200),"
                              "`wins` VARCHAR(200),"
                              "`losses` VARCHAR(200),"
@@ -1256,6 +1305,8 @@ sql_table_configs = {
 
     "splits_game_situation_table": ("CREATE TABLE IF NOT EXISTS `splits_game_situation_table` ("
                                     "`pid` VARCHAR(200),"
+                                    "`fn` TEXT NOT NULL," 
+                                    "`ln` TEXT NOT NULL,"
                                     "`g` VARCHAR(200),"
                                     "`wins` VARCHAR(200),"
                                     "`losses` VARCHAR(200),"
@@ -1313,6 +1364,8 @@ sql_table_configs = {
 
     "splits_snap_type_and_huddle_table": ("CREATE TABLE IF NOT EXISTS `splits_snap_type_and_huddle_table` ("
                                           "`pid` VARCHAR(200),"
+                                          "`fn` TEXT NOT NULL," 
+                                          "`ln` TEXT NOT NULL,"
                                           "`g` VARCHAR(200),"
                                           "`wins` VARCHAR(200),"
                                           "`losses` VARCHAR(200),"
@@ -1370,6 +1423,8 @@ sql_table_configs = {
 
     "splits_play_action_table": ("CREATE TABLE IF NOT EXISTS `splits_play_action_table` ("
                                  "`pid` VARCHAR(200),"
+                                 "`fn` TEXT NOT NULL," 
+                                 "`ln` TEXT NOT NULL,"
                                  "`g` VARCHAR(200),"
                                  "`wins` VARCHAR(200),"
                                  "`losses` VARCHAR(200),"
@@ -1427,6 +1482,8 @@ sql_table_configs = {
 
     "splits_rpo_table": ("CREATE TABLE IF NOT EXISTS `splits_rpo_table` ("
                          "`pid` VARCHAR(200),"
+                         "`fn` TEXT NOT NULL," 
+                         "`ln` TEXT NOT NULL,"
                          "`g` VARCHAR(200),"
                          "`wins` VARCHAR(200),"
                          "`losses` VARCHAR(200),"

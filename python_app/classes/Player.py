@@ -1,11 +1,11 @@
+import json
 from os import path
 from marshmallow import Schema, fields
 from classes.PlayerSeason import PlayerSeasonSchema
 
 
 class Player:
-    def __init__(self, pid, fn, ln, pos, curr_team, sal=0, age=0.0):
-        self._id = pid
+    def __init__(self, fn, ln, pos, curr_team, pid=None, sal=0, age=0.0):
         self.pid = pid
         self.fn = fn
         self.ln = ln
@@ -23,6 +23,9 @@ class Player:
             if year_obj.year == year:
                 return year_obj
 
+    def get_sqs_json(self):
+        sqs_dict = {"pid": self.pid, "fn": self.fn, "ln": self.ln, "pos": self.pos, "curr_team": self.curr_team}
+        return json.dumps(sqs_dict)
 
 class PlayerSchema(Schema):
     _id = fields.Str()
