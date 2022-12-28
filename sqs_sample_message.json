@@ -1,0 +1,22 @@
+{
+ 	"pid": {
+		"DataType": "String",
+		"StringValue": "20"
+	},
+	"fn": {
+		"DataType": "String",
+		"StringValue": "Kenneth"
+	},
+	"ln": {
+		"DataType": "String",
+		"StringValue": "Walker"
+	},
+	"team": {
+		"DataType": "String",
+		"StringValue": "SEA"
+	},
+	"pos": {
+		"DataType": "String",
+		"StringValue": "RB"
+	}
+}
