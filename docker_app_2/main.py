@@ -1,12 +1,13 @@
 import argparse
 import csv
+import re
 from datetime import date
 
-from python_app.classes.Player import Player
-from python_app.scrape_stats import craft_url, scrape_playerdata, fix_team_abbrev
-from python_app.writer import write_to_db, write_single_csv_headers_fantasy, write_to_single_csv, \
+from classes.Player import Player
+from scrape_stats import craft_url, scrape_playerdata, fix_team_abbrev
+from writer import write_to_db, write_single_csv_headers_fantasy, write_to_single_csv, \
     write_qb_gamestats_to_csv, write_flex_gamestats_to_csv, read_from_db, write_to_dynamodb, write_to_mysql
-from python_app.score_convert import calc_dynasty_scoring
+from score_convert import calc_dynasty_scoring
 
 
 def read_fantasy_pros_rank_sheet(csv_path):

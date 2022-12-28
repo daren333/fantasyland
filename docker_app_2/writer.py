@@ -8,8 +8,8 @@ from mysql.connector import errorcode
 from pymongo import MongoClient
 from sqlalchemy import create_engine
 
-from python_app import config
-from python_app.classes.Player import PlayerSchema
+import config
+from classes.Player import PlayerSchema
 
 
 def write_gamelogs(stat_val):
