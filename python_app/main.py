@@ -8,8 +8,7 @@ import boto3
 from python_app import config
 from python_app.classes.Player import Player
 from python_app.scrape_stats import craft_url, scrape_playerdata, fix_team_abbrev
-from python_app.writer import write_to_db, write_single_csv_headers_fantasy, write_to_single_csv, \
-    write_qb_gamestats_to_csv, write_flex_gamestats_to_csv, read_from_db, write_to_dynamodb, write_to_mysql
+from python_app.writer import write_to_mysql
 from python_app.score_convert import calc_dynasty_scoring
 
 
@@ -29,32 +28,48 @@ def read_fantasy_pros_rank_sheet(csv_path):
     return players
 
 
+def get_test_message_from_sqs_sample(sample_path):
+    players = []
+    with open(sample_path, "r") as file:
+        message_str = file.read()
+        player_dict = literal_eval(message_str)
+        player = Player(pid=player_dict["pid"],
+                        fn=player_dict["fn"],
+                        ln=player_dict["ln"],
+                        age=player_dict["age"],
+                        url=player_dict["url"])
+        players.append(player)
+    return players
+
+
 def get_players_from_sqs():
     sqs_client = boto3.resource("sqs")
     queue = sqs_client.get_queue_by_name(QueueName=config.sqs_queue_name)
     messages = queue.receive_messages(MaxNumberOfMessages=1)
 
     players = []
+    player_messages = {}
     for message in messages:
         player_dict = literal_eval(message.body)
         player = Player(pid=player_dict["pid"],
                         fn=player_dict["fn"],
                         ln=player_dict["ln"],
-                        pos=player_dict["pos"],
-                        curr_team=player_dict["curr_team"])
+                        age=player_dict["age"],
+                        url=player_dict["url"])
         players.append(player)
-        message.delete()
+        player_messages[player.url] = message
 
-    return players
+    return players, player_messages
 
 
 def main(args):
 
     players = []
+    sqs_messages = {}
     if args.test_mode:
-        players = read_fantasy_pros_rank_sheet(args.csv_file)
+        players = get_test_message_from_sqs_sample(args.sample_sqs_message)
     else:
-        players = get_players_from_sqs()
+        players, sqs_messages = get_players_from_sqs()
 
     # only scrape current year's data if not in full scrape mode
     years_to_scrape = None
@@ -66,20 +81,17 @@ def main(args):
         else:
             years_to_scrape = [str(today.year - 1)]
 
-    first_player = True
     for player in players:
-        soup = craft_url(player, test_mode=True)
-        scrape_playerdata(player, soup, test_mode=True, years_to_scrape=years_to_scrape)
+        scrape_playerdata(player, test_mode=True, years_to_scrape=years_to_scrape)
         calc_dynasty_scoring(player)
-        if first_player:
-            write_to_mysql(player, args.init_db)
-            first_player = False
-        else:
-            write_to_mysql(player, False)
-        print("finit")
-
-
-
+        write_to_mysql(player)
+        message = sqs_messages.get(player.url)
+        if not args.test_mode:
+            try:
+                message.delete()
+                print(f"Deleted SQS Message for player {player.fn} {player.ln}")
+            except Exception as e:
+                print(f"Could not delete SQS Message for player {player.fn} {player.ln}. Error is: {e}")
 
 
 if __name__ == "__main__":
@@ -89,10 +101,10 @@ if __name__ == "__main__":
                         type = str,
                         default='/Users/dansher/fun_repos/fantasyland/UDK_2020/',
                         help="path to csv file containing players")
-    parser.add_argument("-c", "--csv_file",
+    parser.add_argument("-sqs", "--sample_sqs_message",
                             type = str,
-                            default='Sample_FantasyPros_2022_Ros_ALL_Rankings.csv',
-                            help="path to csv file containing players")
+                            default='sample_sqs_message_body.txt',
+                            help="path to sqs sample message")
     parser.add_argument("-t", "--test_mode", 
                             action="store_true", 
                             help="enable test mode")

@@ -1,14 +1,19 @@
 import argparse
 import csv
 import uuid
+from datetime import date
 
 import boto3
 import sqlalchemy
 from sqlalchemy import create_engine, select
 
 from python_app import config
-from python_app.scrape_stats import fix_team_abbrev
+from python_app.scrape_stats import fix_team_abbrev, scrape_playerlist
 from python_app.classes.Player import Player
+from bs4 import BeautifulSoup, SoupStrainer
+import requests
+
+from python_app.writer import init_mysql_db
 
 
 def read_fantasy_pros_rank_sheet(csv_path):
@@ -26,18 +31,14 @@ def read_fantasy_pros_rank_sheet(csv_path):
     return players
 
 
-def get_pid(player):
-    engine = create_engine(
-        "mysql+pymysql://" + config.mysql_user + ":" + config.mysql_pw + "@" + config.mysql_host + "/" + config.mysql_db)
+def get_pid(engine, player):
     connection = engine.connect()
-    player_info = sqlalchemy.Table('player_info', sqlalchemy.MetaData(), autoload=True, autoload_with=engine)
+    player_info = sqlalchemy.Table('player_info_table', sqlalchemy.MetaData(), autoload=True, autoload_with=engine)
 
     query = select([player_info.columns.pid])\
-        .where(player_info.columns.fn == player.fn and
-               player_info.columns.ln == player.ln and
-               player_info.columns.pos == player.pos and
-               player_info.columns.team == player.curr_team)
+        .where(player_info.columns.url == player.url)
     query_result = connection.execute(query).fetchall()
+    connection.close()
 
     # if no result, create a pid for that player
     if len(query_result) == 0:
@@ -57,25 +58,28 @@ def create_sqs_message(sqs_client, player_json):
 
 
 def main(args):
+    engine = create_engine(
+        "mysql+pymysql://" + config.mysql_user + ":" + config.mysql_pw + "@" + config.mysql_host + "/" + config.mysql_db)
+
     sqs_client = boto3.resource("sqs")
-    if args.test_mode:
-        players = read_fantasy_pros_rank_sheet(args.input_file)
-    else:
-        s3_client = boto3.resource("s3")
-        obj = s3_client.get_object(bucket=config.s3_bucket, key=config.s3_key)
-        players = read_fantasy_pros_rank_sheet(obj)
+    today = date.today()
+    # if september or later, get this years data. If January-August we want last years data
+    year = str(today.year) if today.month > 9 else str(today.year - 1)
+    playerlist_url = f"https://www.pro-football-reference.com/years/{year}/fantasy.htm"
+
+    players = scrape_playerlist(url=playerlist_url, max_rows=34) if args.test_mode else scrape_playerlist(url=playerlist_url)
+
     for player in players:
-        player.pid = get_pid(player)
+        player.pid = get_pid(engine, player)
         player_json = player.get_sqs_json()
+        print(f"creating sqs message for {player_json}")
         create_sqs_message(sqs_client, player_json)
+    engine.dispose()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-i", "--input_file",
-                        type = str,
-                        default='/Users/dansher/fun_repos/fantasyland/python_app/FantasyPros_2022_Ros_ALL_Rankings.csv',
-                        help="path to csv file containing players")
     parser.add_argument("-t", "--test_mode",
                         action="store_true",
                         help="enable test mode")

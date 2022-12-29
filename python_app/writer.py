@@ -1,12 +1,13 @@
 import boto3
 import pandas as pd
+import sqlalchemy
 from marshmallow import pprint
 import mysql.connector
 
 from mysql.connector import errorcode
 
 from pymongo import MongoClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select, delete
 
 from python_app import config
 from python_app.classes.Player import PlayerSchema
@@ -151,10 +152,11 @@ def create_database(engine, db_name):
             exit(1)
 
 
-def add_player_info_cols(player, df):
+def add_player_info_cols(player, df, season):
     df.insert(0, "pid", player.pid)
     df.insert(1, "fn", player.fn)
     df.insert(2, "ln", player.ln)
+    df.insert(3, "season", season)
     return df
 
 
@@ -162,58 +164,58 @@ def get_player_dfs(player):
     player_dfs = {year: {} for year in player.years}
     for year in player.years:
         player_dfs[year]['gamelog_table'] = add_player_info_cols(player,
-                                                                 pd.DataFrame.from_dict(player.years[year]["gamelogs"]).transpose())
+                                                                 pd.DataFrame.from_dict(player.years[year]["gamelogs"]).transpose(), year)
         player_dfs[year]['fantasy_table'] = add_player_info_cols(player,
-                                                                 pd.DataFrame.from_dict(player.years[year]["fantasy"]).transpose())
+                                                                 pd.DataFrame.from_dict(player.years[year]["fantasy"]).transpose(), year)
         player_dfs[year]['dynasty_scoring_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            [player.dynasty_scoring[year]]).transpose())
+            [player.dynasty_scoring[year]]).transpose(), year)
         player_dfs[year]['adv_rush_rec_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["adv_gamelogs"]["rush_rec_stats"]).transpose())
+            player.years[year]["adv_gamelogs"]["rush_rec_stats"]).transpose(), year)
         if player.pos == "QB":
             player_dfs[year]['adv_pass_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-                player.years[year]["adv_gamelogs"]["passing_stats"]).transpose())
+                player.years[year]["adv_gamelogs"]["passing_stats"]).transpose(), year)
         player_dfs[year]['splits_place_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Place"]).transpose())
+            player.years[year]["splits"]["Place"]).transpose(), year)
         player_dfs[year]['splits_result_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Result"]).transpose())
+            player.years[year]["splits"]["Result"]).transpose(), year)
         player_dfs[year]['splits_final_margin_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Final Margin"]).transpose())
+            player.years[year]["splits"]["Final Margin"]).transpose(), year)
         player_dfs[year]['splits_month_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Month"]).transpose())
+            player.years[year]["splits"]["Month"]).transpose(), year)
         player_dfs[year]['splits_game_number_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Game Number"]).transpose())
+            player.years[year]["splits"]["Game Number"]).transpose(), year)
         player_dfs[year]['splits_day_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Day"]).transpose())
+            player.years[year]["splits"]["Day"]).transpose(), year)
         player_dfs[year]['splits_time_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Time"]).transpose())
+            player.years[year]["splits"]["Time"]).transpose(), year)
         player_dfs[year]['splits_conference_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Conference"]).transpose())
+            player.years[year]["splits"]["Conference"]).transpose(), year)
         player_dfs[year]['splits_division_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Division"]).transpose())
+            player.years[year]["splits"]["Division"]).transpose(), year)
         player_dfs[year]['splits_opponent_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Opponent"]).transpose())
+            player.years[year]["splits"]["Opponent"]).transpose(), year)
         player_dfs[year]['splits_stadium_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Stadium"]).transpose())
+            player.years[year]["splits"]["Stadium"]).transpose(), year)
         player_dfs[year]['splits_down_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Down"]).transpose())
+            player.years[year]["splits"]["Down"]).transpose(), year)
         player_dfs[year]['splits_yards_to_go_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Yards To Go"]).transpose())
+            player.years[year]["splits"]["Yards To Go"]).transpose(), year)
         player_dfs[year]['splits_down_and_yards_to_go_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Down & Yards to Go"]).transpose())
+            player.years[year]["splits"]["Down & Yards to Go"]).transpose(), year)
         player_dfs[year]['splits_field_position_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Field Position"]).transpose())
+            player.years[year]["splits"]["Field Position"]).transpose(), year)
         player_dfs[year]['splits_score_differential_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Score Differential"]).transpose())
+            player.years[year]["splits"]["Score Differential"]).transpose(), year)
         player_dfs[year]['splits_quarter_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Quarter"]).transpose())
+            player.years[year]["splits"]["Quarter"]).transpose(), year)
         player_dfs[year]['splits_game_situation_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Game Situation"]).transpose())
+            player.years[year]["splits"]["Game Situation"]).transpose(), year)
         player_dfs[year]['splits_snap_type_and_huddle_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Snap Type & Huddle"]).transpose())
+            player.years[year]["splits"]["Snap Type & Huddle"]).transpose(), year)
         player_dfs[year]['splits_play_action_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Play Action"]).transpose())
+            player.years[year]["splits"]["Play Action"]).transpose(), year)
         player_dfs[year]['splits_rpo_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Run/Pass Option"]).transpose())
+            player.years[year]["splits"]["Run/Pass Option"]).transpose(), year)
     return player_dfs
 
 
@@ -234,14 +236,13 @@ def create_sql_tables(engine):
             print("Created Table: %s" % table)
 
 
-def write_to_mysql(player, init_db):
+def write_to_mysql(player):
     engine = create_engine(
-        "mysql+pymysql://" + config.mysql_user + ":" + config.mysql_pw + "@" + config.mysql_host)
+        "mysql+pymysql://" + config.mysql_user + ":" + config.mysql_pw + "@" + config.mysql_host + "/" + config.mysql_db)
     player_dfs = get_player_dfs(player)
-    if init_db:
-        init_mysql_db(engine)
+
     write_to_mysqldb(engine, player, player_dfs)
-    print("created db tables")
+    print(f"wrote to DB for Player {player.fn} {player.ln}")
 
 
 def create_player_info_df(player):
@@ -251,22 +252,56 @@ def create_player_info_df(player):
         "ln": player.ln,
         "pos": player.pos,
         "team": player.curr_team,
-        "age": player.age
+        "age": player.age,
+        "url": player.url
     }
 
     return pd.DataFrame(player_info_dict, columns=[key for key in player_info_dict.keys()], index=[0])
 
 
-def write_to_mysqldb(engine, player, player_dfs):
+# Needed to delete existing tables until Pandas decides to add upsert to to_sql function
+def delete_player_info_row(engine, player, table_name):
+    connection = engine.connect()
 
+    info_table = sqlalchemy.Table(table_name, sqlalchemy.MetaData(), autoload=True, autoload_with=engine)
+    delete_op = info_table.delete().where(info_table.columns.pid == player.pid and info_table.columns.url == player.url)
+    connection.execute(delete_op)
+
+    connection.close()
+
+
+# Needed to delete existing tables until Pandas decides to add upsert to to_sql function
+def delete_player_stats_row(engine, player, season, table_name):
+    connection = engine.connect()
+
+    gamelog_table = sqlalchemy.Table(table_name, sqlalchemy.MetaData(), autoload=True, autoload_with=engine)
+
+    delete_op = gamelog_table.delete().where(gamelog_table.columns.pid == player.pid and gamelog_table.columns.season == season)
+    connection.execute(delete_op)
+
+    connection.close()
+
+
+def delete_row_if_present(engine, player, table_name, player_info, season=None):
+    delete_player_info_row(engine, player, table_name) if player_info else \
+        delete_player_stats_row(engine, player, season, table_name)
+
+
+def write_to_mysqldb(engine, player, player_dfs):
     cursor = engine.connect()
     cursor.execute("USE %s" % config.mysql_db)
     player_info_df = create_player_info_df(player)
-    player_info_df.to_sql("player_info", con=cursor, if_exists='append', index=False)
 
-    for df_name in player_dfs["2022"]:
-        df = player_dfs["2022"][df_name]
-        df.to_sql(df_name, con=cursor, if_exists='append', index=False)
+    # Needed until Pandas decides to add upsert to to_sql function
+    delete_row_if_present(engine=engine, player=player, table_name="player_info_table", player_info=True)
+    player_info_df.to_sql("player_info_table", con=cursor, if_exists='append', index=False)
+
+    for year in player_dfs:
+        for df_name in player_dfs[year]:
+            df = player_dfs[year][df_name]
+            # Needed until Pandas decides to add upsert to to_sql function
+            delete_row_if_present(engine=engine, player=player, season=year, table_name=df_name, player_info=False)
+            df.to_sql(df_name, con=cursor, if_exists='append', index=False)
 
 
 def write_to_dynamodb(player):

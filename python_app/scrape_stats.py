@@ -3,6 +3,8 @@ import requests
 import re
 import time
 
+from python_app import config
+from python_app.classes.Player import Player
 from python_app.config import team_map
 
 # Aligns team abbreviations w/ pro football ref abbrevs
@@ -36,6 +38,15 @@ def convert_to_short_team_name(team_name):
         return None
 
 
+def get_player_pos(soup):
+    pos_div = soup.select('#meta > div:nth-child(2) > p:nth-child(3)')
+    pd = re.search(r">\:\s(\w+)", str(pos_div))
+
+    if pd:
+        return pd.group(1)
+    raise Exception(f"Could not get player position from position div: {str(pos_div)}")
+
+
 def get_team_id(soup):
     team_div = soup.select("#meta > div:nth-child(2) > p:nth-child(5) > span > a")
     td = re.search(r">(\w+\s?\w+\s?\w+)<", str(team_div))
@@ -43,6 +54,81 @@ def get_team_id(soup):
         return convert_to_short_team_name(td.group(1))
     else:
         return None
+
+
+def get_player_name_and_link_from_playerlist(player_name_div):
+    m = re.search(r"href=\"(.*)\">(.*)<\/a>", str(player_name_div))
+    if m and m.lastindex == 2:
+        player_name = m.group(2)
+        player_link = config.base_url + m.group(1)
+        return player_name, player_link
+    else:
+        raise Exception(f"Could not get player name or link from div: {str(player_name_div)}")
+
+
+def get_current_team(player_link, session):
+    r = session.get(player_link)
+
+    if r.status_code != 200:
+        raise Exception(f"Bad link {player_link}")
+
+    soup = BeautifulSoup(r.text, features='lxml')
+    return get_team_id(soup)
+
+
+def get_player_team_from_playerlist(player_team_div, player_link, session):
+    # check for multi team guys
+    m = re.search(r"\d+TM", str(player_team_div))
+    if m:
+        return get_current_team(player_link, session)
+    m = re.search(r"title=\"(.*)\"", str(player_team_div))
+    if m:
+        return m.group(1)
+    raise Exception(f"Could not get team from div: {str(player_team_div)}")
+
+
+def get_player_position_from_playerlist(player_pos_div):
+    m = re.search(r">(\w{2})</td>", str(player_pos_div))
+    if m:
+        player_pos = m.group(1)
+        return player_pos
+    else:
+        raise Exception(f"Could not get player position from div: {str(player_pos_div)}")
+
+
+def get_player_age_from_playerlist(player_age_div):
+    m = re.search(r">(\d{2})</td>", str(player_age_div))
+    if m:
+        player_age = m.group(1)
+        return player_age
+    else:
+        raise Exception(f"Could not get player position from div: {str(player_age_div)}")
+
+
+def scrape_playerlist(url, max_rows=1000):
+    players = []
+    with requests.Session() as session:
+        r = session.get(url)
+
+        if r.status_code != 200:
+            raise Exception(f"Bad link {url}")
+
+        strainer = SoupStrainer(id='all_fantasy')
+        soup = BeautifulSoup(r.text, features='lxml', parse_only=strainer)
+
+        i = 1
+        while i < max_rows and soup.select(f"#fantasy > tbody > tr:nth-child({i})"):
+            # skip header rows
+            if not soup.select(f"#fantasy > tbody > tr:nth-child({i}) > th.ranker.sort_default_asc.show_partial_when_sorting.center"):
+                player_name, player_link = get_player_name_and_link_from_playerlist(soup.select(f'#fantasy > tbody > tr:nth-child({i}) > td:nth-child(2) > a'))
+                player_fn = player_name.split()[0]
+                # Get multi last names like St. Brown and combine into one last name
+                player_ln = ' '.join([str(elem) for elem in player_name.split()[1:]])
+                player_age = get_player_age_from_playerlist(soup.select(f'#fantasy > tbody > tr:nth-child({i}) > td:nth-child(5)'))
+                players.append(Player(fn=player_fn, ln=player_ln, age=player_age, url=player_link))
+                print(f"Got playerdata for {player_name}")
+            i += 1
+    return players
 
 # Players page follows the standard: 
 # players/
@@ -120,57 +206,67 @@ def craft_url(player, max_retries = 5, test_mode = False):
         return soup
 
 
-def scrape_playerdata(player, soup, years_to_scrape=None, test_mode=False):
-    start = time.time()
-    gamelogs = {}
-    advanced_gamelogs = {}
-    splits = {}
-    fantasy = {}
-    #try:
-    gamelogs_html = soup.select("#inner_nav > ul > li:nth-child(2) > div")
-    splits_html = soup.select("#inner_nav > ul > li:nth-child(3)")
-    fantasy_html = soup.select("#inner_nav > ul > li:nth-child(4)")
-
-    gamelog_links = re.findall(r"href=\"(.*/gamelog/\d{4}/)\">(\d{4})<", str(gamelogs_html))
-    for link in gamelog_links:
-        url = link[0]
-        year = link[1]
-        if (years_to_scrape and year in years_to_scrape) or not years_to_scrape:
-            gamelogs[year] = "https://www.pro-football-reference.com" + url
-            advanced_gamelogs[year] = "https://www.pro-football-reference.com" + url + "advanced"
-
-    splits_links = re.findall(r"href=\"(.*/splits/\d{4}/)\">(\d{4})<", str(splits_html))
-    for link in splits_links:
-        url = link[0]
-        year = link[1]
-        if (years_to_scrape and year in years_to_scrape) or not years_to_scrape:
-            splits[year] = "https://www.pro-football-reference.com" + url
-
-
-    fantasy_links = re.findall(r"href=\"(.*/fantasy/\d{4}/)\">(\d{4})<", str(fantasy_html))
-    for link in fantasy_links:
-        url = link[0]
-        year = link[1]
-        if (years_to_scrape and year in years_to_scrape) or not years_to_scrape:
-            fantasy[year] = "https://www.pro-football-reference.com" + url
-
-    # Set up year objects for players
-    player.years = {year: {} for year in gamelogs.keys()}
-
+def scrape_playerdata(player, years_to_scrape=None, test_mode=False):
+    print(f"Scraping playerdata for player: {player.fn} {player.ln}")
     with requests.Session() as session:
-        scrape_gamelogs(player, gamelogs, session, test_mode=test_mode)
-        scrape_advanced_gamelogs(player, advanced_gamelogs, session, test_mode=test_mode)
-        scrape_fantasy(player, fantasy, session, test_mode=test_mode)
-        scrape_splits(player, splits, session, test_mode=test_mode)
+        r = session.get(player.url)
+        if r.status_code != 200:
+            raise Exception(f"Player link wrong for player: {player.fn} {player.ln} {player.url}. Status code: {r.status_code}")
+        soup = BeautifulSoup(r.text, features='lxml')
 
-    end = time.time()
-    if test_mode:
-        print("Total scrape time is %f seconds" % (end - start))
-    return 0
-    # except Exception as e:
-    #     print(e)
-    #     print('Unable to get data for %s %s' % (player.fn, player.ln))
-    #     return None
+        player.pos = get_player_pos(soup)
+        player.curr_team = get_team_id(soup)
+
+        start = time.time()
+        gamelogs = {}
+        advanced_gamelogs = {}
+        splits = {}
+        fantasy = {}
+        #try:
+        gamelogs_html = soup.select("#inner_nav > ul > li:nth-child(2) > div")
+        splits_html = soup.select("#inner_nav > ul > li:nth-child(3)")
+        fantasy_html = soup.select("#inner_nav > ul > li:nth-child(4)")
+
+        gamelog_links = re.findall(r"href=\"(.*/gamelog/\d{4}/)\">(\d{4})<", str(gamelogs_html))
+        for link in gamelog_links:
+            url = link[0]
+            year = link[1]
+            if (years_to_scrape and year in years_to_scrape) or not years_to_scrape:
+                gamelogs[year] = "https://www.pro-football-reference.com" + url
+                advanced_gamelogs[year] = "https://www.pro-football-reference.com" + url + "advanced"
+
+        splits_links = re.findall(r"href=\"(.*/splits/\d{4}/)\">(\d{4})<", str(splits_html))
+        for link in splits_links:
+            url = link[0]
+            year = link[1]
+            if (years_to_scrape and year in years_to_scrape) or not years_to_scrape:
+                splits[year] = "https://www.pro-football-reference.com" + url
+
+
+        fantasy_links = re.findall(r"href=\"(.*/fantasy/\d{4}/)\">(\d{4})<", str(fantasy_html))
+        for link in fantasy_links:
+            url = link[0]
+            year = link[1]
+            if (years_to_scrape and year in years_to_scrape) or not years_to_scrape:
+                fantasy[year] = "https://www.pro-football-reference.com" + url
+
+        # Set up year objects for players
+        player.years = {year: {} for year in gamelogs.keys()}
+
+        with requests.Session() as session:
+            scrape_gamelogs(player, gamelogs, session, test_mode=test_mode)
+            scrape_advanced_gamelogs(player, advanced_gamelogs, session, test_mode=test_mode)
+            scrape_fantasy(player, fantasy, session, test_mode=test_mode)
+            scrape_splits(player, splits, session, test_mode=test_mode)
+
+        end = time.time()
+        if test_mode:
+            print("Total scrape time is %f seconds" % (end - start))
+        return 0
+        # except Exception as e:
+        #     print(e)
+        #     print('Unable to get data for %s %s' % (player.fn, player.ln))
+        #     return None
 
 
 def scrape_gamelogs(player, gamelogs, session, test_mode):
