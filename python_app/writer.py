@@ -264,7 +264,7 @@ def delete_player_info_row(engine, player, table_name):
     connection = engine.connect()
 
     info_table = sqlalchemy.Table(table_name, sqlalchemy.MetaData(), autoload=True, autoload_with=engine)
-    delete_op = info_table.delete().where(info_table.columns.pid == player.pid and info_table.columns.url == player.url)
+    delete_op = info_table.delete().where(info_table.columns.pid == player.pid).where(info_table.columns.url == player.url)
     connection.execute(delete_op)
 
     connection.close()
@@ -276,7 +276,7 @@ def delete_player_stats_row(engine, player, season, table_name):
 
     stats_table = sqlalchemy.Table(table_name, sqlalchemy.MetaData(), autoload=True, autoload_with=engine)
 
-    delete_op = stats_table.delete().where(stats_table.columns.season == season and stats_table.columns.pid == player.pid)
+    delete_op = stats_table.delete().where(stats_table.columns.season == season).where(stats_table.columns.pid == player.pid)
     connection.execute(delete_op)
 
     connection.close()
