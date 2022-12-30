@@ -58,7 +58,7 @@ def main(args):
 
     for player in players:
         player.pid, full_scrape_enabled = get_pid(engine, player)
-        player_json = player.get_sqs_json(full_scrape_enabled)
+        player_json = player.get_sqs_json(str(full_scrape_enabled))
         print(f"creating sqs message for {player_json}")
         if not args.test_mode:
             create_sqs_message(sqs_client, player_json)
