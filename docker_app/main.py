@@ -4,6 +4,7 @@ from ast import literal_eval
 from datetime import date
 
 import boto3
+from distutils.util import strtobool
 
 import config
 from classes.Player import Player
@@ -29,7 +30,7 @@ def read_fantasy_pros_rank_sheet(csv_path):
 
 
 def get_test_message_from_sqs_sample(sample_path):
-    players = []
+    players_to_scrape = {}
     with open(sample_path, "r") as file:
         message_str = file.read()
         player_dict = literal_eval(message_str)
@@ -38,8 +39,13 @@ def get_test_message_from_sqs_sample(sample_path):
                         ln=player_dict["ln"],
                         age=player_dict["age"],
                         url=player_dict["url"])
-        players.append(player)
-    return players
+        full_scrape_enabled = player_dict["full_scrape_enabled"]
+        players_to_scrape[player.pid] = {
+            "player_obj": player,
+            "full_scrape": bool(strtobool(full_scrape_enabled))
+        }
+
+    return players_to_scrape
 
 
 def get_players_from_sqs():
@@ -47,8 +53,7 @@ def get_players_from_sqs():
     queue = sqs_client.get_queue_by_name(QueueName=config.sqs_queue_name)
     messages = queue.receive_messages(MaxNumberOfMessages=1)
 
-    players = []
-    player_messages = {}
+    players_to_scrape = {}
     for message in messages:
         player_dict = literal_eval(message.body)
         player = Player(pid=player_dict["pid"],
@@ -56,36 +61,41 @@ def get_players_from_sqs():
                         ln=player_dict["ln"],
                         age=player_dict["age"],
                         url=player_dict["url"])
-        players.append(player)
-        player_messages[player.url] = message
+        full_scrape_enabled = player_dict["full_scrape_enabled"]
+        players_to_scrape[player.pid] = {
+            "player_obj": player,
+            "message": message,
+            "full_scrape": bool(strtobool(full_scrape_enabled))
+        }
 
-    return players, player_messages
+    return players_to_scrape
+
+
+def get_current_season():
+    today = date.today()
+    # if september or later, get this years data. If January-August we want last years data
+    if today.month > 9:
+        return str(today.year)
+    else:
+        return str(today.year - 1)
 
 
 def main(args):
 
-    sqs_messages = {}
     if args.test_mode:
         players = get_test_message_from_sqs_sample(args.sample_sqs_message)
     else:
         players, sqs_messages = get_players_from_sqs()
 
-    # only scrape current year's data if not in full scrape mode
-    years_to_scrape = None
-    if not args.full_scrape_mode:
-        today = date.today()
-        # if september or later, get this years data. If January-August we want last years data
-        if today.month > 9:
-            years_to_scrape = [str(today.year)]
-        else:
-            years_to_scrape = [str(today.year - 1)]
-
-    for player in players:
+    for pid in players:
+        player = players[pid]["player_obj"]
+        years_to_scrape = [get_current_season()] if not players[pid]["full_scrape"] else None
         scrape_playerdata(player, test_mode=True, years_to_scrape=years_to_scrape)
         calc_dynasty_scoring(player)
         write_to_mysql(player)
-        message = sqs_messages.get(player.url)
+
         if not args.test_mode:
+            message = players[pid]["message"]
             try:
                 message.delete()
                 print(f"Deleted SQS Message for player {player.fn} {player.ln}")
@@ -96,10 +106,6 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-i", "--in_dir",
-                        type = str,
-                        default='/Users/dansher/fun_repos/fantasyland/UDK_2020/',
-                        help="path to csv file containing players")
     parser.add_argument("-sqs", "--sample_sqs_message",
                             type = str,
                             default='sample_sqs_message_body.txt',
@@ -107,18 +113,9 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--test_mode", 
                             action="store_true", 
                             help="enable test mode")
-    parser.add_argument("-d", "--dynasty_mode",
-                        action="store_true",
-                        help="enable test mode")
     parser.add_argument("-db", "--database",
                         type=str,
                         default="mysql",
                         help="which db to use - options: mysql, mongodb, postgres. Defaults to mysql")
-    parser.add_argument("-fs", "--full_scrape_mode",
-                        action="store_true",
-                        help="enable full scrape mode - gets all data from all years for that player (default is to only get the current year)")
-    parser.add_argument("-init_db", "--init_db",
-                        action="store_true",
-                        help="create all the initial tables for the DB before writing stats (only use this option if starting from a blank mysql instance")
     args = parser.parse_args()
     main(args) 

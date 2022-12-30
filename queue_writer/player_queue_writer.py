@@ -7,28 +7,9 @@ import boto3
 import sqlalchemy
 from sqlalchemy import create_engine, select
 
-from python_app import config
-from python_app.scrape_stats import fix_team_abbrev, scrape_playerlist
-from python_app.classes.Player import Player
-from bs4 import BeautifulSoup, SoupStrainer
-import requests
-
-from python_app.writer import init_mysql_db
-
-
-def read_fantasy_pros_rank_sheet(csv_path):
-    players = []
-    with open(csv_path) as csv_file:
-        reader = csv.reader(csv_file)
-        for row in reader:
-            # Skip header row
-            if row[0] and row[0] != 'RK':
-                fn = row[1].split()[0]
-                ln = row[1].split()[1]
-                team = fix_team_abbrev(row[2])
-                pos = row[3][:2]
-                players.append(Player(fn, ln, pos, team))
-    return players
+import config
+from scrape_stats import fix_team_abbrev, scrape_playerlist
+from classes.Player import Player
 
 
 def get_pid(engine, player):
@@ -40,15 +21,19 @@ def get_pid(engine, player):
     query_result = connection.execute(query).fetchall()
     connection.close()
 
-    # if no result, create a pid for that player
+    # if player not in db yet, create a pid for that player and enable full scrape mode
     if len(query_result) == 0:
-        return str(uuid.uuid1())
-    # if one result return pid
+        pid = str(uuid.uuid1())
+        full_scrape_mode = True
+    # if player in db return pid and do not enable full scrape mode (we already have their past stats)
     elif len(query_result) == 1:
-        return query_result[0][0]
+        pid = query_result[0][0]
+        full_scrape_mode = False
     # if more than one result throw an exception
     else:
         raise Exception(f"More than one pid found for player {player.fn} {player.ln} at position {player.pos} and team {player.curr_team}")
+
+    return (pid, full_scrape_mode)
 
 
 def create_sqs_message(sqs_client, player_json):
@@ -67,13 +52,17 @@ def main(args):
     year = str(today.year) if today.month > 9 else str(today.year - 1)
     playerlist_url = f"https://www.pro-football-reference.com/years/{year}/fantasy.htm"
 
-    players = scrape_playerlist(url=playerlist_url, max_rows=34) if args.test_mode else scrape_playerlist(url=playerlist_url)
+    if args.test_mode:
+        players = scrape_playerlist(url=playerlist_url, max_rows=34)
+    else:
+        scrape_playerlist(url=playerlist_url)
 
     for player in players:
-        player.pid = get_pid(engine, player)
-        player_json = player.get_sqs_json()
+        player.pid, full_scrape_enabled = get_pid(engine, player)
+        player_json = player.get_sqs_json(full_scrape_enabled)
         print(f"creating sqs message for {player_json}")
-        create_sqs_message(sqs_client, player_json)
+        if not args.test_mode:
+            create_sqs_message(sqs_client, player_json)
     engine.dispose()
 
 

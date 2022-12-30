@@ -1,6 +1,7 @@
 import json
 
 
+
 class Player:
     def __init__(self, fn, ln, pos=None, curr_team=None, pid=None, sal=0, age=0.0, url=None):
         self.pid = pid

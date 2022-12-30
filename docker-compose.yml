@@ -1,5 +1,6 @@
 services:
-  app:
+  stat_scraper:
+    image: fantasyland_stat_scraper:latest
     build:
       context: ./docker_app
       dockerfile: Dockerfile
@@ -10,7 +11,26 @@ services:
       - $HOME/.aws/credentials:/root/.aws/credentials:ro
       - $HOME/.aws/config:/root/.aws/config:ro
     environment:
-      MYSQL_HOST: mysql #database-1.c5huywdwn3ev.us-east-1.rds.amazonaws.com
+      MYSQL_HOST: database-1.c5huywdwn3ev.us-east-1.rds.amazonaws.com
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_DB: nfl
+    depends_on:
+      - mysql
+
+  queue_writer:
+    image: fantasyland_queue_writer:latest
+    build:
+      context: ./queue_writer
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3306
+    volumes:
+      - ./:/docker_app
+      - $HOME/.aws/credentials:/root/.aws/credentials:ro
+      - $HOME/.aws/config:/root/.aws/config:ro
+    environment:
+      MYSQL_HOST: database-1.c5huywdwn3ev.us-east-1.rds.amazonaws.com
       MYSQL_PORT: 3306
       MYSQL_USER: root
       MYSQL_DB: nfl

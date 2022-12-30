@@ -10,7 +10,6 @@ from pymongo import MongoClient
 from sqlalchemy import create_engine
 
 import config
-from classes.Player import PlayerSchema
 
 
 def write_gamelogs(stat_val):
@@ -304,48 +303,48 @@ def write_to_mysqldb(engine, player, player_dfs):
             df.to_sql(df_name, con=cursor, if_exists='append', index=False)
 
 
-def write_to_dynamodb(player):
-    # boto3.setup_default_session()
-    # client = boto3.resource("dynamodb").Table("fantatsyland")
-    # serialized_player = PlayerSchema().dump(player)
-    # client.put_item(Item=serialized_player)
+# def write_to_dynamodb(player):
+#     # boto3.setup_default_session()
+#     # client = boto3.resource("dynamodb").Table("fantatsyland")
+#     # serialized_player = PlayerSchema().dump(player)
+#     # client.put_item(Item=serialized_player)
+#
+#     table_name = "fantasyland"
+#     dynamodb_resource = boto3.resource("dynamodb")
+#     table = dynamodb_resource.Table(table_name)
+#     serialized_player = PlayerSchema().dump(player)
+#     response = table.put_item(Item=serialized_player)
+#     print(response)
+#
 
-    table_name = "fantasyland"
-    dynamodb_resource = boto3.resource("dynamodb")
-    table = dynamodb_resource.Table(table_name)
-    serialized_player = PlayerSchema().dump(player)
-    response = table.put_item(Item=serialized_player)
-    print(response)
+# def write_to_db(player):
+#     # filepath = '%s/%s.json' % (db, 'test')
+#
+#     # with open(filepath, 'w') as f:
+#     #     f.write('{')
+#     #     # Write all but last player with trailing commas
+#     #     for player in players[:-1]:
+#     #         f.write(write_season_stats_to_json_str(player))
+#     #     # Write last player without trailing comma
+#     #     f.write(write_season_stats_to_json_str(players[-1]) + '}')
+#
+#     # client = MongoClient("mongodb://root:example@localhost:27017/")
+#     client = MongoClient("mongodb://root:example@localhost:27017/")
+#     db = client["nfl"]
+#     players_db = db["players"]
+#     # for player in players:
+#     serialized_player = PlayerSchema().dump(player)
+#     players_db.update_one({'_id': player.pid}, {"$set": serialized_player}, upsert=True)
 
 
-def write_to_db(player):
-    # filepath = '%s/%s.json' % (db, 'test')
-
-    # with open(filepath, 'w') as f:
-    #     f.write('{')
-    #     # Write all but last player with trailing commas
-    #     for player in players[:-1]:
-    #         f.write(write_season_stats_to_json_str(player))
-    #     # Write last player without trailing comma
-    #     f.write(write_season_stats_to_json_str(players[-1]) + '}')
-
-    # client = MongoClient("mongodb://root:example@localhost:27017/")
-    client = MongoClient("mongodb://root:example@localhost:27017/")
-    db = client["nfl"]
-    players_db = db["players"]
-    # for player in players:
-    serialized_player = PlayerSchema().dump(player)
-    players_db.update_one({'_id': player.pid}, {"$set": serialized_player}, upsert=True)
-
-
-def read_from_db(pid):
-    client = MongoClient("mongodb://root:example@localhost:27017/")
-
-    db = client["nfl"]
-    players_db = db["players"]
-    player_json = players_db.find_one({"pid": pid})
-    deserialized_player = PlayerSchema().load(player_json)
-    pprint(deserialized_player)
+# def read_from_db(pid):
+#     client = MongoClient("mongodb://root:example@localhost:27017/")
+#
+#     db = client["nfl"]
+#     players_db = db["players"]
+#     player_json = players_db.find_one({"pid": pid})
+#     deserialized_player = PlayerSchema().load(player_json)
+#     pprint(deserialized_player)
 
 
 def write_single_csv_headers_fantasy(csv_path):
