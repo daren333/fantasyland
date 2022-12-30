@@ -1,0 +1,10 @@
+aiofiles==0.4.0
+aiohttp==3.6.2
+beautifulsoup4==4.11.1
+requests==2.23.0
+lxml
+boto3
+pymysql==1.0.2
+mysql-connector-python==8.0.31
+SQLAlchemy==1.4.16
+cryptography==2.8

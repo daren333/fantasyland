@@ -1,5 +1,4 @@
 import argparse
-import csv
 import uuid
 from datetime import date
 
@@ -55,7 +54,7 @@ def main(args):
     if args.test_mode:
         players = scrape_playerlist(url=playerlist_url, max_rows=34)
     else:
-        scrape_playerlist(url=playerlist_url)
+        players = scrape_playerlist(url=playerlist_url)
 
     for player in players:
         player.pid, full_scrape_enabled = get_pid(engine, player)
