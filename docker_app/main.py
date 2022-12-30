@@ -85,7 +85,7 @@ def main(args):
     if args.test_mode:
         players = get_test_message_from_sqs_sample(args.sample_sqs_message)
     else:
-        players, sqs_messages = get_players_from_sqs()
+        players = get_players_from_sqs()
 
     for pid in players:
         player = players[pid]["player_obj"]
