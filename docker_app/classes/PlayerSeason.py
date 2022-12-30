@@ -5,7 +5,7 @@ class PlayerSeason:
     def __init__(self, year, teams):
         self.year = year
         self.teams = teams
-        self.stats = {'gamelogs': {}, 'splits': {}, 'fantasy': {}}
+        self.stats = {'gamelogs': {}, 'splits': {}, 'fantasy': {}, 'adv_gamelogs': {}}
 
     def __str__(self):
         return 'Player stats for %s season while playing for %s' % (self.year, self.teams)

@@ -107,28 +107,27 @@ def calc_dynasty_scoring(player):
 	years = {}
 	#weeks = {}
 
-	player.fantasy = {}
+	player.dynasty_scoring = {}
 
 	for year in player.years:
 		weeks = {}
 		year_pts = 0
-		year_key = year.year
-		for week in year.stats['gamelogs'].items():
+		for week in player.years[year]['gamelogs'].keys():
 			week_pts = 0
-			week_num = week[0]
-			#[stat.replace('\"', '0') for stat in week[1].values()]
-			fill_empties(week[1])
-			if 'pass_att' in week[1]:
-				week_pts += calc_passing(player, week[1], dynasty_settings)
-			if 'rush_att' in week[1]:
-				week_pts += calc_rushing(player, week[1], dynasty_settings)
-			if 'rec' in week[1]:
-				week_pts += calc_receiving(player, week[1], dynasty_settings)
-			week_pts += calc_misc(player, week[1], dynasty_settings)
+			week_num = week
+			#[stat.replace('\"', '0') for stat in player.years[year]['gamelogs'][week].values()]
+			fill_empties(player.years[year]['gamelogs'][week])
+			if 'pass_att' in player.years[year]['gamelogs'][week]:
+				week_pts += calc_passing(player, player.years[year]['gamelogs'][week], dynasty_settings)
+			if 'rush_att' in player.years[year]['gamelogs'][week]:
+				week_pts += calc_rushing(player, player.years[year]['gamelogs'][week], dynasty_settings)
+			if 'rec' in player.years[year]['gamelogs'][week]:
+				week_pts += calc_receiving(player, player.years[year]['gamelogs'][week], dynasty_settings)
+			week_pts += calc_misc(player, player.years[year]['gamelogs'][week], dynasty_settings)
 			year_pts += round(week_pts, 2)
 			weeks[week_num] = round(week_pts, 2)
-		years[year_key] = year_pts
-		player.fantasy[year_key] = {'year_total': year_pts, 'weekly': weeks}
+		years[year] = year_pts
+		player.dynasty_scoring[year] = weeks
 
 
 def calc_scoring(players, score_settings = dynasty_settings):
@@ -148,7 +147,6 @@ def calc_scoring(players, score_settings = dynasty_settings):
 		for player in players:
 			year_points = 0
 			for year in player.years:
-				year_str = year.year
 				for week in year.stats['gamelogs'].items():
 					week_points = 0
 					week_str = week['week_num']

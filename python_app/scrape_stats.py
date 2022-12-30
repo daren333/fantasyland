@@ -3,9 +3,9 @@ import requests
 import re
 import time
 
-from python_app import config
-from python_app.classes.Player import Player
-from python_app.config import team_map
+import config
+from classes.Player import Player
+from config import team_map
 
 # Aligns team abbreviations w/ pro football ref abbrevs
 def fix_team_abbrev(team):

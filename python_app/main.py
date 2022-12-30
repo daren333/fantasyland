@@ -5,11 +5,11 @@ from datetime import date
 
 import boto3
 
-from python_app import config
-from python_app.classes.Player import Player
-from python_app.scrape_stats import craft_url, scrape_playerdata, fix_team_abbrev
-from python_app.writer import write_to_mysql
-from python_app.score_convert import calc_dynasty_scoring
+import config
+from classes.Player import Player
+from scrape_stats import craft_url, scrape_playerdata, fix_team_abbrev
+from writer import write_to_mysql
+from score_convert import calc_dynasty_scoring
 
 
 def read_fantasy_pros_rank_sheet(csv_path):

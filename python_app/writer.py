@@ -1,16 +1,15 @@
 import boto3
 import pandas as pd
 import sqlalchemy
-from marshmallow import pprint
 import mysql.connector
 
 from mysql.connector import errorcode
 
 from pymongo import MongoClient
-from sqlalchemy import create_engine, select, delete
+from sqlalchemy import create_engine
 
-from python_app import config
-from python_app.classes.Player import PlayerSchema
+import config
+from classes.Player import PlayerSchema
 
 
 def write_gamelogs(stat_val):
@@ -338,14 +337,14 @@ def write_to_db(player):
     players_db.update_one({'_id': player.pid}, {"$set": serialized_player}, upsert=True)
 
 
-def read_from_db(pid):
-    client = MongoClient("mongodb://root:example@localhost:27017/")
-
-    db = client["nfl"]
-    players_db = db["players"]
-    player_json = players_db.find_one({"pid": pid})
-    deserialized_player = PlayerSchema().load(player_json)
-    pprint(deserialized_player)
+# def read_from_db(pid):
+#     client = MongoClient("mongodb://root:example@localhost:27017/")
+#
+#     db = client["nfl"]
+#     players_db = db["players"]
+#     player_json = players_db.find_one({"pid": pid})
+#     deserialized_player = PlayerSchema().load(player_json)
+#     pprint(deserialized_player)
 
 
 def write_single_csv_headers_fantasy(csv_path):

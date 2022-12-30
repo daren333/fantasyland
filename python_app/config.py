@@ -76,7 +76,7 @@ sqs_queue_name = "fantasyland-queue"
 
 # RDS
 mysql_user = env.get("MYSQL_USER", "root")
-mysql_pw = get_secret()
+mysql_pw = env.get("MYSQL_PW", get_secret())
 mysql_host = env.get("MYSQL_HOST", "database-1.c5huywdwn3ev.us-east-1.rds.amazonaws.com")
 mysql_port = env.get("MYSQL_PORT", "3306")
 mysql_db = env.get("MYSQL_DB", "nfl")
