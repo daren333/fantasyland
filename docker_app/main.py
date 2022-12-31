@@ -51,7 +51,7 @@ def get_test_message_from_sqs_sample(sample_path):
 def get_players_from_sqs():
     sqs_client = boto3.resource("sqs")
     queue = sqs_client.get_queue_by_name(QueueName=config.sqs_queue_name)
-    messages = queue.receive_messages(MaxNumberOfMessages=1)
+    messages = queue.receive_messages(MaxNumberOfMessages=5)
 
     players_to_scrape = {}
     for message in messages:
@@ -81,26 +81,34 @@ def get_current_season():
 
 
 def main(args):
+    print("v2")
 
     if args.test_mode:
         players = get_test_message_from_sqs_sample(args.sample_sqs_message)
     else:
         players = get_players_from_sqs()
 
-    for pid in players:
-        player = players[pid]["player_obj"]
-        years_to_scrape = [get_current_season()] if not players[pid]["full_scrape"] else None
-        scrape_playerdata(player, test_mode=True, years_to_scrape=years_to_scrape)
-        calc_dynasty_scoring(player)
-        write_to_mysql(player)
+    while len(players) > 0:
+        for pid in players:
+            player = players[pid]["player_obj"]
+            years_to_scrape = [get_current_season()] if not players[pid]["full_scrape"] else None
+            scrape_playerdata(player, test_mode=True, years_to_scrape=years_to_scrape)
+            calc_dynasty_scoring(player)
+            write_to_mysql(player)
+            print(f"wrote {player.fn} {player.ln} to mysql db")
 
-        if not args.test_mode:
-            message = players[pid]["message"]
-            try:
-                message.delete()
-                print(f"Deleted SQS Message for player {player.fn} {player.ln}")
-            except Exception as e:
-                print(f"Could not delete SQS Message for player {player.fn} {player.ln}. Error is: {e}")
+            if not args.test_mode:
+                message = players[pid]["message"]
+                try:
+                    message.delete()
+                    print(f"Deleted SQS Message for player {player.fn} {player.ln}")
+                except Exception as e:
+                    print(f"Could not delete SQS Message for player {player.fn} {player.ln}. Error is: {e}")
+            else:  # if test mode exit after the first entry read
+                return 0
+
+        players = get_players_from_sqs()  # if not test mode refill players from queue
+    return 0
 
 
 if __name__ == "__main__":
@@ -113,6 +121,9 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--test_mode", 
                             action="store_true", 
                             help="enable test mode")
+    parser.add_argument("-l", "--local_mode",
+                        action="store_true",
+                        help="enable local mode")
     parser.add_argument("-db", "--database",
                         type=str,
                         default="mysql",

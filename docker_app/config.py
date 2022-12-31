@@ -86,7 +86,7 @@ base_url = "https://www.pro-football-reference.com"
 # Docker
 # mysql_user = env.get("MYSQL_USER", "root")
 # mysql_pw = env.get("MYSQL_PW", "example")
-# mysql_host = env.get("MYSQL_HOST", "127.0.0.1")
+# mysql_host = env.get("MYSQL_HOST", "localhost")
 # mysql_port = env.get("MYSQL_PORT", "3306")
 # mysql_db = env.get("MYSQL_DB", "nfl")
 
