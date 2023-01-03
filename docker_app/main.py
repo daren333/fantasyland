@@ -81,7 +81,6 @@ def get_current_season():
 
 
 def main(args):
-    print("v2")
 
     if args.test_mode:
         players = get_test_message_from_sqs_sample(args.sample_sqs_message)

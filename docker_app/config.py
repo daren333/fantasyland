@@ -95,14 +95,14 @@ sql_table_configs = {
                           "  `pid` varchar(80) NOT NULL,"
                           "  `fn` TEXT NOT NULL," 
                           "  `ln` TEXT NOT NULL,"
-                          "  `pos` TEXT NOT NULL,"
-                          "  `team` TEXT NOT NULL,"
-                          "  `age` TEXT NOT NULL,"
+                          "  `pos` TEXT,"
+                          "  `team` TEXT,"
+                          "  `age` TEXT,"
                           "  `url` TEXT NOT NULL,"
                           "  PRIMARY KEY (`pid`)"
                           ") ENGINE=InnoDB"),
 
-    "gamelog_table": ("CREATE TABLE IF NOT EXISTS `gamelog_table` ("
+    "gamelogs_table": ("CREATE TABLE IF NOT EXISTS `gamelogs_table` ("
                       "`pid` VARCHAR(200),"
                       "`fn` TEXT NOT NULL," 
                       "`ln` TEXT NOT NULL,"
@@ -150,6 +150,10 @@ sql_table_configs = {
                       "`two_pt_md` VARCHAR(200),"
                       "`all_td` VARCHAR(200),"
                       "`scoring` VARCHAR(200),"
+                      "`def_int` VARCHAR(200),"
+                      "`def_int_yds` VARCHAR(200),"
+                      "`def_int_td` VARCHAR(200),"
+                      "`pass_defended` VARCHAR(200),"
                       "`sacks` VARCHAR(200),"
                       "`tackles_solo` VARCHAR(200),"
                       "`tackles_assists` VARCHAR(200),"
@@ -162,6 +166,17 @@ sql_table_configs = {
                       "`fumbles_rec` VARCHAR(200),"
                       "`fumbles_rec_yds` VARCHAR(200),"
                       "`fumbles_rec_td` VARCHAR(200),"
+                      "`punt` VARCHAR(200),"
+                      "`punt_yds` VARCHAR(200),"
+                      "`punt_yds_per_punt` VARCHAR(200),"
+                      "`punt_ret_yds_opp` VARCHAR(200),"
+                      "`punt_net_yds` VARCHAR(200),"
+                      "`punt_net_yds_per_punt` VARCHAR(200),"
+                      "`punt_tb` VARCHAR(200),"
+                      "`punt_tb_pct` VARCHAR(200),"
+                      "`punt_in_20` VARCHAR(200),"
+                      "`punt_in_20_pct` VARCHAR(200),"
+                      "`punt_blocked` VARCHAR(200),"
                       "`offense` VARCHAR(200),"
                       "`off_pct` VARCHAR(200),"
                       "`defense` VARCHAR(200),"
@@ -215,7 +230,8 @@ sql_table_configs = {
                       "`st_pct` VARCHAR(200),"
                       "`fantasy_points` VARCHAR(200),"
                       "`draftkings_points` VARCHAR(200),"
-                      "`fanduel_points` VARCHAR(200)"
+                      "`fanduel_points` VARCHAR(200),"
+                      "`dynasty_points` VARCHAR(200)"
                       ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin"),
 
     "dynasty_scoring_table": ("CREATE TABLE IF NOT EXISTS `dynasty_scoring_table` ("
@@ -226,7 +242,7 @@ sql_table_configs = {
                               "`0` VARCHAR(200)"
                               ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin"),
 
-    "adv_rush_rec_table": ("CREATE TABLE IF NOT EXISTS `adv_rush_rec_table` ("
+    "adv_gamelogs_rush_rec_table": ("CREATE TABLE IF NOT EXISTS `adv_gamelogs_rush_rec_table` ("
                            "`pid` VARCHAR(200),"
                            "`fn` TEXT NOT NULL," 
                            "`ln` TEXT NOT NULL,"
@@ -268,7 +284,7 @@ sql_table_configs = {
                            "`rush_broken_tackles_per_rush` VARCHAR(200)"
                            ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin"),
 
-    "adv_pass_table": ("CREATE TABLE IF NOT EXISTS `adv_pass_table` ("
+    "adv_gamelogs_passing_table": ("CREATE TABLE IF NOT EXISTS `adv_gamelogs_passing_table` ("
                        "`pid` VARCHAR(200),"
                        "`fn` TEXT NOT NULL," 
                        "`ln` TEXT NOT NULL,"
@@ -313,6 +329,9 @@ sql_table_configs = {
                            "`fn` TEXT NOT NULL," 
                            "`ln` TEXT NOT NULL,"
                            "`season` TEXT NOT NULL,"
+                           "`split_id` VARCHAR(200),"
+                           "`split_type` VARCHAR(200),"
+                           "`split_value` VARCHAR(200),"
                            "`g` VARCHAR(200),"
                            "`wins` VARCHAR(200),"
                            "`losses` VARCHAR(200),"
@@ -373,6 +392,9 @@ sql_table_configs = {
                             "`fn` TEXT NOT NULL," 
                             "`ln` TEXT NOT NULL,"
                             "`season` TEXT NOT NULL,"
+                            "`split_id` VARCHAR(200),"
+                            "`split_type` VARCHAR(200),"
+                            "`split_value` VARCHAR(200),"
                             "`g` VARCHAR(200),"
                             "`wins` VARCHAR(200),"
                             "`losses` VARCHAR(200),"
@@ -433,6 +455,9 @@ sql_table_configs = {
                                   "`fn` TEXT NOT NULL," 
                                   "`ln` TEXT NOT NULL,"
                                   "`season` TEXT NOT NULL,"
+                                  "`split_id` VARCHAR(200),"
+                                  "`split_type` VARCHAR(200),"
+                                  "`split_value` VARCHAR(200),"
                                   "`g` VARCHAR(200),"
                                   "`wins` VARCHAR(200),"
                                   "`losses` VARCHAR(200),"
@@ -493,6 +518,9 @@ sql_table_configs = {
                            "`fn` TEXT NOT NULL," 
                            "`ln` TEXT NOT NULL,"
                            "`season` TEXT NOT NULL,"
+                           "`split_id` VARCHAR(200),"
+                           "`split_type` VARCHAR(200),"
+                           "`split_value` VARCHAR(200),"
                            "`g` VARCHAR(200),"
                            "`wins` VARCHAR(200),"
                            "`losses` VARCHAR(200),"
@@ -553,6 +581,9 @@ sql_table_configs = {
                                  "`fn` TEXT NOT NULL," 
                                  "`ln` TEXT NOT NULL,"
                                  "`season` TEXT NOT NULL,"
+                                 "`split_id` VARCHAR(200),"
+                                 "`split_type` VARCHAR(200),"
+                                 "`split_value` VARCHAR(200),"
                                  "`g` VARCHAR(200),"
                                  "`wins` VARCHAR(200),"
                                  "`losses` VARCHAR(200),"
@@ -613,6 +644,9 @@ sql_table_configs = {
                          "`fn` TEXT NOT NULL," 
                          "`ln` TEXT NOT NULL,"
                          "`season` TEXT NOT NULL,"
+                         "`split_id` VARCHAR(200),"
+                         "`split_type` VARCHAR(200),"
+                         "`split_value` VARCHAR(200),"
                          "`g` VARCHAR(200),"
                          "`wins` VARCHAR(200),"
                          "`losses` VARCHAR(200),"
@@ -673,6 +707,9 @@ sql_table_configs = {
                           "`fn` TEXT NOT NULL," 
                           "`ln` TEXT NOT NULL,"
                           "`season` TEXT NOT NULL,"
+                          "`split_id` VARCHAR(200),"
+                          "`split_type` VARCHAR(200),"
+                          "`split_value` VARCHAR(200),"
                           "`g` VARCHAR(200),"
                           "`wins` VARCHAR(200),"
                           "`losses` VARCHAR(200),"
@@ -733,6 +770,9 @@ sql_table_configs = {
                                 "`fn` TEXT NOT NULL," 
                                 "`ln` TEXT NOT NULL,"
                                 "`season` TEXT NOT NULL,"
+                                "`split_id` VARCHAR(200),"
+                                "`split_type` VARCHAR(200),"
+                                "`split_value` VARCHAR(200),"
                                 "`g` VARCHAR(200),"
                                 "`wins` VARCHAR(200),"
                                 "`losses` VARCHAR(200),"
@@ -793,6 +833,9 @@ sql_table_configs = {
                               "`fn` TEXT NOT NULL," 
                               "`ln` TEXT NOT NULL,"
                               "`season` TEXT NOT NULL,"
+                              "`split_id` VARCHAR(200),"
+                              "`split_type` VARCHAR(200),"
+                              "`split_value` VARCHAR(200),"
                               "`g` VARCHAR(200),"
                               "`wins` VARCHAR(200),"
                               "`losses` VARCHAR(200),"
@@ -853,6 +896,9 @@ sql_table_configs = {
                               "`fn` TEXT NOT NULL," 
                               "`ln` TEXT NOT NULL,"
                               "`season` TEXT NOT NULL,"
+                              "`split_id` VARCHAR(200),"
+                              "`split_type` VARCHAR(200),"
+                              "`split_value` VARCHAR(200),"
                               "`g` VARCHAR(200),"
                               "`wins` VARCHAR(200),"
                               "`losses` VARCHAR(200),"
@@ -913,6 +959,9 @@ sql_table_configs = {
                              "`fn` TEXT NOT NULL," 
                              "`ln` TEXT NOT NULL,"
                              "`season` TEXT NOT NULL,"
+                             "`split_id` VARCHAR(200),"
+                             "`split_type` VARCHAR(200),"
+                             "`split_value` VARCHAR(200),"
                              "`g` VARCHAR(200),"
                              "`wins` VARCHAR(200),"
                              "`losses` VARCHAR(200),"
@@ -973,6 +1022,9 @@ sql_table_configs = {
                           "`fn` TEXT NOT NULL," 
                           "`ln` TEXT NOT NULL,"
                           "`season` TEXT NOT NULL,"
+                          "`split_id` VARCHAR(200),"
+                          "`split_type` VARCHAR(200),"
+                          "`split_value` VARCHAR(200),"
                           "`g` VARCHAR(200),"
                           "`wins` VARCHAR(200),"
                           "`losses` VARCHAR(200),"
@@ -1033,6 +1085,9 @@ sql_table_configs = {
                                  "`fn` TEXT NOT NULL," 
                                  "`ln` TEXT NOT NULL,"
                                  "`season` TEXT NOT NULL,"
+                                 "`split_id` VARCHAR(200),"
+                                 "`split_type` VARCHAR(200),"
+                                 "`split_value` VARCHAR(200),"
                                  "`g` VARCHAR(200),"
                                  "`wins` VARCHAR(200),"
                                  "`losses` VARCHAR(200),"
@@ -1088,11 +1143,14 @@ sql_table_configs = {
                                  "`fumbles_rec_td` VARCHAR(200)"
                                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin"),
 
-    "splits_down_and_yards_to_go_table": ("CREATE TABLE IF NOT EXISTS `splits_down_and_yards_to_go_table` ("
+    "splits_down_&_yards_to_go_table": ("CREATE TABLE IF NOT EXISTS `splits_down_&_yards_to_go_table` ("
                                           "`pid` VARCHAR(200),"
                                           "`fn` TEXT NOT NULL," 
                                           "`ln` TEXT NOT NULL,"
                                           "`season` TEXT NOT NULL,"
+                                          "`split_id` VARCHAR(200),"
+                                          "`split_type` VARCHAR(200),"
+                                          "`split_value` VARCHAR(200),"
                                           "`g` VARCHAR(200),"
                                           "`wins` VARCHAR(200),"
                                           "`losses` VARCHAR(200),"
@@ -1153,6 +1211,9 @@ sql_table_configs = {
                                     "`fn` TEXT NOT NULL," 
                                     "`ln` TEXT NOT NULL,"
                                     "`season` TEXT NOT NULL,"
+                                    "`split_id` VARCHAR(200),"
+                                    "`split_type` VARCHAR(200),"
+                                    "`split_value` VARCHAR(200),"
                                     "`g` VARCHAR(200),"
                                     "`wins` VARCHAR(200),"
                                     "`losses` VARCHAR(200),"
@@ -1213,6 +1274,9 @@ sql_table_configs = {
                                         "`fn` TEXT NOT NULL," 
                                         "`ln` TEXT NOT NULL,"
                                         "`season` TEXT NOT NULL,"
+                                        "`split_id` VARCHAR(200),"
+                                        "`split_type` VARCHAR(200),"
+                                        "`split_value` VARCHAR(200),"
                                         "`g` VARCHAR(200),"
                                         "`wins` VARCHAR(200),"
                                         "`losses` VARCHAR(200),"
@@ -1273,6 +1337,9 @@ sql_table_configs = {
                              "`fn` TEXT NOT NULL," 
                              "`ln` TEXT NOT NULL,"
                              "`season` TEXT NOT NULL,"
+                             "`split_id` VARCHAR(200),"
+                             "`split_type` VARCHAR(200),"
+                             "`split_value` VARCHAR(200),"
                              "`g` VARCHAR(200),"
                              "`wins` VARCHAR(200),"
                              "`losses` VARCHAR(200),"
@@ -1333,6 +1400,9 @@ sql_table_configs = {
                                     "`fn` TEXT NOT NULL," 
                                     "`ln` TEXT NOT NULL,"
                                     "`season` TEXT NOT NULL,"
+                                    "`split_id` VARCHAR(200),"
+                                    "`split_type` VARCHAR(200),"
+                                    "`split_value` VARCHAR(200),"
                                     "`g` VARCHAR(200),"
                                     "`wins` VARCHAR(200),"
                                     "`losses` VARCHAR(200),"
@@ -1388,11 +1458,14 @@ sql_table_configs = {
                                     "`fumbles_rec_td` VARCHAR(200)"
                                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin"),
 
-    "splits_snap_type_and_huddle_table": ("CREATE TABLE IF NOT EXISTS `splits_snap_type_and_huddle_table` ("
+    "splits_snap_type_&_huddle_table": ("CREATE TABLE IF NOT EXISTS `splits_snap_type_&_huddle_table` ("
                                           "`pid` VARCHAR(200),"
                                           "`fn` TEXT NOT NULL," 
                                           "`ln` TEXT NOT NULL,"
                                           "`season` TEXT NOT NULL,"
+                                          "`split_id` VARCHAR(200),"
+                                          "`split_type` VARCHAR(200),"
+                                          "`split_value` VARCHAR(200),"
                                           "`g` VARCHAR(200),"
                                           "`wins` VARCHAR(200),"
                                           "`losses` VARCHAR(200),"
@@ -1453,6 +1526,9 @@ sql_table_configs = {
                                  "`fn` TEXT NOT NULL," 
                                  "`ln` TEXT NOT NULL,"
                                  "`season` TEXT NOT NULL,"
+                                 "`split_id` VARCHAR(200),"
+                                 "`split_type` VARCHAR(200),"
+                                 "`split_value` VARCHAR(200),"
                                  "`g` VARCHAR(200),"
                                  "`wins` VARCHAR(200),"
                                  "`losses` VARCHAR(200),"
@@ -1508,11 +1584,14 @@ sql_table_configs = {
                                  "`fumbles_rec_td` VARCHAR(200)"
                                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin"),
 
-    "splits_rpo_table": ("CREATE TABLE IF NOT EXISTS `splits_rpo_table` ("
+    "splits_run/pass_option_table": ("CREATE TABLE IF NOT EXISTS `splits_run/pass_option_table` ("
                          "`pid` VARCHAR(200),"
                          "`fn` TEXT NOT NULL," 
                          "`ln` TEXT NOT NULL,"
                          "`season` TEXT NOT NULL,"
+                         "`split_id` VARCHAR(200),"
+                         "`split_type` VARCHAR(200),"
+                         "`split_value` VARCHAR(200),"
                          "`g` VARCHAR(200),"
                          "`wins` VARCHAR(200),"
                          "`losses` VARCHAR(200),"
@@ -1566,5 +1645,455 @@ sql_table_configs = {
                          "`fumbles_rec` VARCHAR(200),"
                          "`fumbles_rec_yds` VARCHAR(200),"
                          "`fumbles_rec_td` VARCHAR(200)"
-                         ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin")
+                         ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin"),
+
+    "splits_time_in_pocket_table": ("CREATE TABLE IF NOT EXISTS `splits_time_in_pocket_table` ("
+                                     "`pid` VARCHAR(200),"
+                                     "`fn` TEXT NOT NULL,"
+                                     "`ln` TEXT NOT NULL,"
+                                     "`season` TEXT NOT NULL,"
+                                     "`split_id` VARCHAR(200),"
+                                     "`split_type` VARCHAR(200),"
+                                     "`split_value` VARCHAR(200),"
+                                     "`g` VARCHAR(200),"
+                                     "`wins` VARCHAR(200),"
+                                     "`losses` VARCHAR(200),"
+                                     "`ties` VARCHAR(200),"
+                                     "`targets` VARCHAR(200),"
+                                     "`rec` VARCHAR(200),"
+                                     "`rec_yds` VARCHAR(200),"
+                                     "`rec_yds_per_rec` VARCHAR(200),"
+                                     "`rec_td` VARCHAR(200),"
+                                     "`rec_first_down` VARCHAR(200),"
+                                     "`catch_pct` VARCHAR(200),"
+                                     "`rec_yds_per_tgt` VARCHAR(200),"
+                                     "`rec_per_g` VARCHAR(200),"
+                                     "`rec_yds_per_g` VARCHAR(200),"
+                                     "`rush_att` VARCHAR(200),"
+                                     "`rush_yds` VARCHAR(200),"
+                                     "`rush_yds_per_att` VARCHAR(200),"
+                                     "`rush_td` VARCHAR(200),"
+                                     "`rush_first_down` VARCHAR(200),"
+                                     "`rush_att_per_g` VARCHAR(200),"
+                                     "`rush_yds_per_g` VARCHAR(200),"
+                                     "`pass_cmp` VARCHAR(200),"
+                                     "`pass_att` VARCHAR(200),"
+                                     "`pass_inc` VARCHAR(200),"
+                                     "`pass_cmp_perc` VARCHAR(200),"
+                                     "`pass_yds` VARCHAR(200),"
+                                     "`pass_td` VARCHAR(200),"
+                                     "`pass_first_down` VARCHAR(200),"
+                                     "`pass_int` VARCHAR(200),"
+                                     "`pass_rating` VARCHAR(200),"
+                                     "`pass_sacked` VARCHAR(200),"
+                                     "`pass_sacked_yds` VARCHAR(200),"
+                                     "`pass_yds_per_att` VARCHAR(200),"
+                                     "`pass_adj_yds_per_att` VARCHAR(200),"
+                                     "`pass_att_per_g` VARCHAR(200),"
+                                     "`pass_yds_per_g` VARCHAR(200),"
+                                     "`kick_ret` VARCHAR(200),"
+                                     "`kick_ret_yds` VARCHAR(200),"
+                                     "`kick_ret_yds_per_ret` VARCHAR(200),"
+                                     "`kick_ret_td` VARCHAR(200),"
+                                     "`punt_ret` VARCHAR(200),"
+                                     "`punt_ret_yds` VARCHAR(200),"
+                                     "`punt_ret_yds_per_ret` VARCHAR(200),"
+                                     "`punt_ret_td` VARCHAR(200),"
+                                     "`two_pt_md` VARCHAR(200),"
+                                     "`all_td` VARCHAR(200),"
+                                     "`scoring` VARCHAR(200),"
+                                     "`fumbles` VARCHAR(200),"
+                                     "`fumbles_lost` VARCHAR(200),"
+                                     "`fumbles_forced` VARCHAR(200),"
+                                     "`fumbles_rec` VARCHAR(200),"
+                                     "`fumbles_rec_yds` VARCHAR(200),"
+                                     "`fumbles_rec_td` VARCHAR(200)"
+                                     ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin"),
+
+    "splits_qb_start_table": ("CREATE TABLE IF NOT EXISTS `splits_qb_start_table` ("
+                                    "`pid` VARCHAR(200),"
+                                    "`fn` TEXT NOT NULL,"
+                                    "`ln` TEXT NOT NULL,"
+                                    "`season` TEXT NOT NULL,"
+                                    "`split_id` VARCHAR(200),"
+                                    "`split_type` VARCHAR(200),"
+                                    "`split_value` VARCHAR(200),"
+                                    "`g` VARCHAR(200),"
+                                    "`wins` VARCHAR(200),"
+                                    "`losses` VARCHAR(200),"
+                                    "`ties` VARCHAR(200),"
+                                    "`targets` VARCHAR(200),"
+                                    "`rec` VARCHAR(200),"
+                                    "`rec_yds` VARCHAR(200),"
+                                    "`rec_yds_per_rec` VARCHAR(200),"
+                                    "`rec_td` VARCHAR(200),"
+                                    "`rec_first_down` VARCHAR(200),"
+                                    "`catch_pct` VARCHAR(200),"
+                                    "`rec_yds_per_tgt` VARCHAR(200),"
+                                    "`rec_per_g` VARCHAR(200),"
+                                    "`rec_yds_per_g` VARCHAR(200),"
+                                    "`rush_att` VARCHAR(200),"
+                                    "`rush_yds` VARCHAR(200),"
+                                    "`rush_yds_per_att` VARCHAR(200),"
+                                    "`rush_td` VARCHAR(200),"
+                                    "`rush_first_down` VARCHAR(200),"
+                                    "`rush_att_per_g` VARCHAR(200),"
+                                    "`rush_yds_per_g` VARCHAR(200),"
+                                    "`pass_cmp` VARCHAR(200),"
+                                    "`pass_att` VARCHAR(200),"
+                                    "`pass_inc` VARCHAR(200),"
+                                    "`pass_cmp_perc` VARCHAR(200),"
+                                    "`pass_yds` VARCHAR(200),"
+                                    "`pass_td` VARCHAR(200),"
+                                    "`pass_first_down` VARCHAR(200),"
+                                    "`pass_int` VARCHAR(200),"
+                                    "`pass_rating` VARCHAR(200),"
+                                    "`pass_sacked` VARCHAR(200),"
+                                    "`pass_sacked_yds` VARCHAR(200),"
+                                    "`pass_yds_per_att` VARCHAR(200),"
+                                    "`pass_adj_yds_per_att` VARCHAR(200),"
+                                    "`pass_att_per_g` VARCHAR(200),"
+                                    "`pass_yds_per_g` VARCHAR(200),"
+                                    "`kick_ret` VARCHAR(200),"
+                                    "`kick_ret_yds` VARCHAR(200),"
+                                    "`kick_ret_yds_per_ret` VARCHAR(200),"
+                                    "`kick_ret_td` VARCHAR(200),"
+                                    "`punt_ret` VARCHAR(200),"
+                                    "`punt_ret_yds` VARCHAR(200),"
+                                    "`punt_ret_yds_per_ret` VARCHAR(200),"
+                                    "`punt_ret_td` VARCHAR(200),"
+                                    "`two_pt_md` VARCHAR(200),"
+                                    "`all_td` VARCHAR(200),"
+                                    "`scoring` VARCHAR(200),"
+                                    "`fumbles` VARCHAR(200),"
+                                    "`fumbles_lost` VARCHAR(200),"
+                                    "`fumbles_forced` VARCHAR(200),"
+                                    "`fumbles_rec` VARCHAR(200),"
+                                    "`fumbles_rec_yds` VARCHAR(200),"
+                                    "`fumbles_rec_td` VARCHAR(200)"
+                                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin"),
+
+    "splits_playoffs_table": ("CREATE TABLE IF NOT EXISTS `splits_playoffs_table` ("
+                              "`pid` VARCHAR(200),"
+                              "`fn` TEXT NOT NULL,"
+                              "`ln` TEXT NOT NULL,"
+                              "`season` TEXT NOT NULL,"
+                              "`split_id` VARCHAR(200),"
+                              "`split_type` VARCHAR(200),"
+                              "`split_value` VARCHAR(200),"
+                              "`g` VARCHAR(200),"
+                              "`wins` VARCHAR(200),"
+                              "`losses` VARCHAR(200),"
+                              "`ties` VARCHAR(200),"
+                              "`targets` VARCHAR(200),"
+                              "`rec` VARCHAR(200),"
+                              "`rec_yds` VARCHAR(200),"
+                              "`rec_yds_per_rec` VARCHAR(200),"
+                              "`rec_td` VARCHAR(200),"
+                              "`rec_first_down` VARCHAR(200),"
+                              "`catch_pct` VARCHAR(200),"
+                              "`rec_yds_per_tgt` VARCHAR(200),"
+                              "`rec_per_g` VARCHAR(200),"
+                              "`rec_yds_per_g` VARCHAR(200),"
+                              "`rush_att` VARCHAR(200),"
+                              "`rush_yds` VARCHAR(200),"
+                              "`rush_yds_per_att` VARCHAR(200),"
+                              "`rush_td` VARCHAR(200),"
+                              "`rush_first_down` VARCHAR(200),"
+                              "`rush_att_per_g` VARCHAR(200),"
+                              "`rush_yds_per_g` VARCHAR(200),"
+                              "`pass_cmp` VARCHAR(200),"
+                              "`pass_att` VARCHAR(200),"
+                              "`pass_inc` VARCHAR(200),"
+                              "`pass_cmp_perc` VARCHAR(200),"
+                              "`pass_yds` VARCHAR(200),"
+                              "`pass_td` VARCHAR(200),"
+                              "`pass_first_down` VARCHAR(200),"
+                              "`pass_int` VARCHAR(200),"
+                              "`pass_rating` VARCHAR(200),"
+                              "`pass_sacked` VARCHAR(200),"
+                              "`pass_sacked_yds` VARCHAR(200),"
+                              "`pass_yds_per_att` VARCHAR(200),"
+                              "`pass_adj_yds_per_att` VARCHAR(200),"
+                              "`pass_att_per_g` VARCHAR(200),"
+                              "`pass_yds_per_g` VARCHAR(200),"
+                              "`kick_ret` VARCHAR(200),"
+                              "`kick_ret_yds` VARCHAR(200),"
+                              "`kick_ret_yds_per_ret` VARCHAR(200),"
+                              "`kick_ret_td` VARCHAR(200),"
+                              "`punt_ret` VARCHAR(200),"
+                              "`punt_ret_yds` VARCHAR(200),"
+                              "`punt_ret_yds_per_ret` VARCHAR(200),"
+                              "`punt_ret_td` VARCHAR(200),"
+                              "`two_pt_md` VARCHAR(200),"
+                              "`all_td` VARCHAR(200),"
+                              "`scoring` VARCHAR(200),"
+                              "`fumbles` VARCHAR(200),"
+                              "`fumbles_lost` VARCHAR(200),"
+                              "`fumbles_forced` VARCHAR(200),"
+                              "`fumbles_rec` VARCHAR(200),"
+                              "`fumbles_rec_yds` VARCHAR(200),"
+                              "`fumbles_rec_td` VARCHAR(200)"
+                              ") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin")
+}
+
+
+table_schemas = {
+    "gamelogs_schema": [
+        "pid",
+        "fn",
+        "ln",
+        "season",
+        "ranker",
+        "game_date",
+        "game_num",
+        "week_num",
+        "age",
+        "team",
+        "game_location",
+        "opp",
+        "game_result",
+        "gs",
+        "targets",
+        "rec",
+        "rec_yds",
+        "rec_yds_per_rec",
+        "rec_td",
+        "catch_pct",
+        "rec_yds_per_tgt",
+        "rush_att",
+        "rush_yds",
+        "rush_yds_per_att",
+        "rush_td",
+        "pass_cmp",
+        "pass_att",
+        "pass_cmp_perc",
+        "pass_yds",
+        "pass_td",
+        "pass_int",
+        "pass_rating",
+        "pass_sacked",
+        "pass_sacked_yds",
+        "pass_yds_per_att",
+        "pass_adj_yds_per_att",
+        "kick_ret",
+        "kick_ret_yds",
+        "kick_ret_yds_per_ret",
+        "kick_ret_td",
+        "punt_ret",
+        "punt_ret_yds",
+        "punt_ret_yds_per_ret",
+        "punt_ret_td",
+        "two_pt_md",
+        "all_td",
+        "scoring",
+        "fumbles",
+        "fumbles_lost",
+        "fumbles_rec",
+        "fumbles_rec_yds",
+        "fumbles_rec_td",
+        "offense",
+        "off_pct",
+        "defense",
+        "def_pct",
+        "special_teams",
+        "st_pct",
+        "status",
+        "reason"
+    ],
+    "fantasy_schema": [
+        "pid",
+        "fn",
+        "ln",
+        "season",
+        "ranker",
+        "game_num",
+        "game_date",
+        "team",
+        "game_location",
+        "opp",
+        "game_result",
+        "starter_pos",
+        "pass_cmp",
+        "pass_att",
+        "pass_yds",
+        "pass_td",
+        "rush_att",
+        "rush_yds",
+        "rush_td",
+        "targets",
+        "rec",
+        "rec_yds",
+        "rec_td",
+        "pass_cmp_in_10",
+        "pass_att_in_10",
+        "pass_yds_in_10",
+        "pass_td_in_10",
+        "rush_att_in_10",
+        "rush_yds_in_10",
+        "rush_td_in_10",
+        "targets_in_10",
+        "rec_in_10",
+        "rec_yds_in_10",
+        "rec_td_in_10",
+        "offense",
+        "off_pct",
+        "defense",
+        "def_pct",
+        "special_teams",
+        "st_pct",
+        "fantasy_points",
+        "draftkings_points",
+        "fanduel_points",
+        "dynasty_points"
+    ],
+    "dynasty_schema": [
+        "pid",
+        "fn",
+        "ln",
+        "season",
+        "0"
+    ],
+    "adv_rush_rec_schema": [
+        "pid",
+        "fn",
+        "ln",
+        "season",
+        "ranker",
+        "game_date",
+        "game_num",
+        "week_num",
+        "age",
+        "team",
+        "game_location",
+        "opp",
+        "game_result",
+        "targets",
+        "rec",
+        "rec_yds",
+        "rec_td",
+        "rec_first_down",
+        "rec_air_yds",
+        "rec_air_yds_per_rec",
+        "rec_yac",
+        "rec_yac_per_rec",
+        "rec_adot",
+        "rec_broken_tackles",
+        "rec_broken_tackles_per_rec",
+        "rec_drops",
+        "rec_drop_pct",
+        "rec_target_int",
+        "rec_pass_rating",
+        "rush_att",
+        "rush_yds",
+        "rush_td",
+        "rush_first_down",
+        "rush_yds_before_contact",
+        "rush_yds_bc_per_rush",
+        "rush_yac",
+        "rush_yac_per_rush",
+        "rush_broken_tackles",
+        "rush_broken_tackles_per_rush"
+    ],
+    "adv_pass_schema": [
+        "pid",
+        "fn",
+        "ln",
+        "season",
+        "ranker",
+        "game_date",
+        "game_num",
+        "week_num",
+        "age",
+        "team",
+        "game_location",
+        "opp",
+        "game_result",
+        "pass_cmp",
+        "pass_att",
+        "pass_yds",
+        "pass_first_down",
+        "pass_first_down_pct",
+        "pass_target_yds",
+        "pass_tgt_yds_per_att",
+        "pass_air_yds",
+        "pass_air_yds_per_cmp",
+        "pass_air_yds_per_att",
+        "pass_yac",
+        "pass_yac_per_cmp",
+        "pass_drops",
+        "pass_drop_pct",
+        "pass_poor_throws",
+        "pass_poor_throw_pct",
+        "pass_sacked",
+        "pass_blitzed",
+        "pass_hurried",
+        "pass_hits",
+        "pass_pressured",
+        "pass_pressured_pct",
+        "rush_scrambles",
+        "rush_scrambles_yds_per_att"
+    ],
+    "splits_schema": [
+        "pid",
+        "fn",
+        "ln",
+        "season",
+        "split_id",
+        "split_type",
+        "split_value",
+        "g",
+        "wins",
+        "losses",
+        "ties",
+        "targets",
+        "rec",
+        "rec_yds",
+        "rec_yds_per_rec",
+        "rec_td",
+        "rec_first_down",
+        "catch_pct",
+        "rec_yds_per_tgt",
+        "rec_per_g",
+        "rec_yds_per_g",
+        "rush_att",
+        "rush_yds",
+        "rush_yds_per_att",
+        "rush_td",
+        "rush_first_down",
+        "rush_att_per_g",
+        "rush_yds_per_g",
+        "pass_cmp",
+        "pass_att",
+        "pass_inc",
+        "pass_cmp_perc",
+        "pass_yds",
+        "pass_td",
+        "pass_first_down",
+        "pass_int",
+        "pass_rating",
+        "pass_sacked",
+        "pass_sacked_yds",
+        "pass_yds_per_att",
+        "pass_adj_yds_per_att",
+        "pass_att_per_g",
+        "pass_yds_per_g",
+        "kick_ret",
+        "kick_ret_yds",
+        "kick_ret_yds_per_ret",
+        "kick_ret_td",
+        "punt_ret",
+        "punt_ret_yds",
+        "punt_ret_yds_per_ret",
+        "punt_ret_td",
+        "two_pt_md",
+        "all_td",
+        "scoring",
+        "fumbles",
+        "fumbles_lost",
+        "fumbles_forced",
+        "fumbles_rec",
+        "fumbles_rec_yds",
+        "fumbles_rec_td"
+    ]
 }

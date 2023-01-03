@@ -130,6 +130,7 @@ def scrape_playerlist(url, max_rows=1000):
             i += 1
     return players
 
+
 # Players page follows the standard: 
 # players/
 # /capitalized first letter of last name/
@@ -138,7 +139,6 @@ def scrape_playerlist(url, max_rows=1000):
 # number for repeat names (usually 00)
 # .htm
 # ex. Tom Brady = players/B/BradTo00.htm
-
 def craft_url(player, max_retries = 5, test_mode = False):
     base_url = 'http://www.pro-football-reference.com/players'
     last_initial = player.ln[0]
@@ -353,7 +353,8 @@ def scrape_advanced_gamelogs(player, adv_gamelogs, session, test_mode):
         # year_obj.stats['adv_gamelogs'] = {"rush_rec_stats": year_stats, "passing_stats": year_passing_stats}
         # # add teams played for for each week
         # [year_obj.teams.add(year_stats[week]['team']) for week in year_stats]
-        player.years[year]['adv_gamelogs'] = {'rush_rec_stats': year_stats, 'passing_stats': year_passing_stats}
+        player.years[year]['adv_gamelogs_rush_rec'] = year_stats
+        player.years[year]['adv_gamelogs_passing'] = year_passing_stats
 
 
     end = time.time()
@@ -370,10 +371,7 @@ def scrape_splits(player, splits, session, test_mode):
 
     for year in splits.keys():
         time.sleep(.5)
-        # year_obj = player.get_year(year)
         year_splits = {}
-        # year_obj.stats['splits'] = year_splits
-        player.years[year]['splits'] = year_splits
 
         split_id = None
 
@@ -406,7 +404,7 @@ def scrape_splits(player, splits, session, test_mode):
                         s = re.search(r"data-stat=\"split_type\".*?>(.*?)</", row)
 
                     if s and s.group(1) != '':
-                        split_id = s.group(1)
+                        split_id = "Splits " + s.group(1)
                         curr_data = {}
                         year_splits[split_id] = curr_data
                     s = re.search(r"data-stat=\"split_value\">(.*?)</", row)
@@ -425,16 +423,17 @@ def scrape_splits(player, splits, session, test_mode):
                     
 
                     # Remove split_id/split_type and split_value from stats
-                    if table == '#stats':
-                        stats.pop('split_id')
-                        stats.pop('split_value')
-                    else:
-                        stats.pop('split_type')
-                        stats.pop('split_value')
+                    # if table == '#stats':
+                    #     stats.pop('split_id')
+                    #     stats.pop('split_value')
+                    # else:
+                    #     stats.pop('split_type')
+                    #     stats.pop('split_value')
                     curr_data[split_val] = stats
 
                 i += 1
-        
+
+        player.years[year].update(year_splits)
         parse_time_end = time.time()
         avg_get_time += (get_time_end - get_time_start)
         avg_parse_time += (parse_time_end - parse_time_start)

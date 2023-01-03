@@ -159,62 +159,98 @@ def add_player_info_cols(player, df, season):
     return df
 
 
+def add_any_nonexistent_cols(df, schema_name):
+    for col in config.table_schemas[schema_name]:
+        if col not in df.columns:
+            df[col] = None
+    return df
+
+
+def select_appropriate_schema(df, table_name, player, season):
+    if table_name == "gamelogs_table":
+        df = add_any_nonexistent_cols(df, "gamelogs_schema")
+        return df[config.table_schemas["gamelogs_schema"]]
+    elif table_name == "fantasy_table":
+        df = add_any_nonexistent_cols(df, "fantasy_schema")
+        return df[config.table_schemas["fantasy_schema"]]
+    elif table_name == "dynasty_scoring_table":
+        return df[config.table_schemas["dynasty_schema"]]
+    elif table_name == "adv_gamelogs_rush_rec_table":
+        df = add_any_nonexistent_cols(df, "adv_rush_rec_schema")
+        return df[config.table_schemas["adv_rush_rec_schema"]]
+    elif table_name == "adv_gamelogs_passing_table":
+        df = add_any_nonexistent_cols(df, "adv_pass_schema")
+        return df[config.table_schemas["adv_pass_schema"]]
+    elif "splits" in table_name:
+        df = add_any_nonexistent_cols(df, "splits_schema")
+        return df[config.table_schemas["splits_schema"]]
+
+
 def get_player_dfs(player):
     player_dfs = {year: {} for year in player.years}
     for year in player.years:
-        player_dfs[year]['gamelog_table'] = add_player_info_cols(player,
-                                                                 pd.DataFrame.from_dict(player.years[year]["gamelogs"]).transpose(), year)
-        player_dfs[year]['fantasy_table'] = add_player_info_cols(player,
-                                                                 pd.DataFrame.from_dict(player.years[year]["fantasy"]).transpose(), year)
-        player_dfs[year]['dynasty_scoring_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            [player.dynasty_scoring[year]]).transpose(), year)
-        player_dfs[year]['adv_rush_rec_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["adv_gamelogs"]["rush_rec_stats"]).transpose(), year)
-        if player.pos == "QB":
-            player_dfs[year]['adv_pass_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-                player.years[year]["adv_gamelogs"]["passing_stats"]).transpose(), year)
-        player_dfs[year]['splits_place_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Place"]).transpose(), year)
-        player_dfs[year]['splits_result_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Result"]).transpose(), year)
-        player_dfs[year]['splits_final_margin_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Final Margin"]).transpose(), year)
-        player_dfs[year]['splits_month_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Month"]).transpose(), year)
-        player_dfs[year]['splits_game_number_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Game Number"]).transpose(), year)
-        player_dfs[year]['splits_day_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Day"]).transpose(), year)
-        player_dfs[year]['splits_time_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Time"]).transpose(), year)
-        player_dfs[year]['splits_conference_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Conference"]).transpose(), year)
-        player_dfs[year]['splits_division_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Division"]).transpose(), year)
-        player_dfs[year]['splits_opponent_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Opponent"]).transpose(), year)
-        player_dfs[year]['splits_stadium_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Stadium"]).transpose(), year)
-        player_dfs[year]['splits_down_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Down"]).transpose(), year)
-        player_dfs[year]['splits_yards_to_go_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Yards To Go"]).transpose(), year)
-        player_dfs[year]['splits_down_and_yards_to_go_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Down & Yards to Go"]).transpose(), year)
-        player_dfs[year]['splits_field_position_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Field Position"]).transpose(), year)
-        player_dfs[year]['splits_score_differential_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Score Differential"]).transpose(), year)
-        player_dfs[year]['splits_quarter_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Quarter"]).transpose(), year)
-        player_dfs[year]['splits_game_situation_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Game Situation"]).transpose(), year)
-        player_dfs[year]['splits_snap_type_and_huddle_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Snap Type & Huddle"]).transpose(), year)
-        player_dfs[year]['splits_play_action_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Play Action"]).transpose(), year)
-        player_dfs[year]['splits_rpo_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
-            player.years[year]["splits"]["Run/Pass Option"]).transpose(), year)
+        for table in player.years[year]:
+            table_name = table.replace(" ", "_").lower() + "_table"
+            if table_name != "splits_league_table":
+                player_dfs[year][table_name] = select_appropriate_schema(
+                    df=add_player_info_cols(player, pd.DataFrame.from_dict(player.years[year][table]).transpose(), year),
+                    table_name=table_name,
+                    player=player,
+                    season=year
+                )
+        # player_dfs[year]['gamelog_table'] = add_player_info_cols(player,
+        #                                                          pd.DataFrame.from_dict(player.years[year]["gamelogs"]).transpose(), year)
+        # player_dfs[year]['fantasy_table'] = add_player_info_cols(player,
+        #                                                          pd.DataFrame.from_dict(player.years[year]["fantasy"]).transpose(), year)
+        # player_dfs[year]['dynasty_scoring_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     [player.dynasty_scoring[year]]).transpose(), year)
+        # player_dfs[year]['adv_rush_rec_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["adv_gamelogs"]["rush_rec_stats"]).transpose(), year)
+        # if player.pos == "QB":
+        #     player_dfs[year]['adv_pass_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #         player.years[year]["adv_gamelogs"]["passing_stats"]).transpose(), year)
+        # player_dfs[year]['splits_place_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Place"]).transpose(), year)
+        # player_dfs[year]['splits_result_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Result"]).transpose(), year)
+        # player_dfs[year]['splits_final_margin_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Final Margin"]).transpose(), year)
+        # player_dfs[year]['splits_month_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Month"]).transpose(), year)
+        # player_dfs[year]['splits_game_number_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Game Number"]).transpose(), year)
+        # player_dfs[year]['splits_day_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Day"]).transpose(), year)
+        # player_dfs[year]['splits_time_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Time"]).transpose(), year)
+        # player_dfs[year]['splits_conference_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Conference"]).transpose(), year)
+        # player_dfs[year]['splits_division_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Division"]).transpose(), year)
+        # player_dfs[year]['splits_opponent_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Opponent"]).transpose(), year)
+        # player_dfs[year]['splits_stadium_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Stadium"]).transpose(), year)
+        # player_dfs[year]['splits_down_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Down"]).transpose(), year)
+        # player_dfs[year]['splits_yards_to_go_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Yards To Go"]).transpose(), year)
+        # player_dfs[year]['splits_down_and_yards_to_go_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Down & Yards to Go"]).transpose(), year)
+        # player_dfs[year]['splits_field_position_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Field Position"]).transpose(), year)
+        # player_dfs[year]['splits_score_differential_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Score Differential"]).transpose(), year)
+        # player_dfs[year]['splits_quarter_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Quarter"]).transpose(), year)
+        # player_dfs[year]['splits_game_situation_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Game Situation"]).transpose(), year)
+        # player_dfs[year]['splits_snap_type_and_huddle_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Snap Type & Huddle"]).transpose(), year)
+        # player_dfs[year]['splits_play_action_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Play Action"]).transpose(), year)
+        # player_dfs[year]['splits_rpo_table'] = add_player_info_cols(player, pd.DataFrame.from_dict(
+        #     player.years[year]["splits"]["Run/Pass Option"]).transpose(), year)
     return player_dfs
 
 
