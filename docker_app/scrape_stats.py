@@ -38,13 +38,36 @@ def convert_to_short_team_name(team_name):
         return None
 
 
+def try_alt_pos_div_2(soup, orig_div_1, orig_div_2):
+    pos_div = soup.select('#meta > div:nth-child(2) > p:nth-child(2)')
+    pd = re.search(r">\:\s(\w+)", str(pos_div))
+    if pd:
+        return pd.group(1)
+    else:
+        raise Exception(f"Could not get player position from position div: "
+                        f"{str(orig_div_1)}"
+                        f"{str(orig_div_2)}"
+                        f"{str(pos_div)}")
+
+
+def try_alt_pos_div(soup, orig_div):
+    pos_div = soup.select('#meta > div > p:nth-child(3)')
+    pd = re.search(r">\:\s(\w+)", str(pos_div))
+    if pd:
+        return pd.group(1)
+    else:
+        return try_alt_pos_div_2(soup=soup, orig_div_1=orig_div, orig_div_2=pos_div)
+
+
 def get_player_pos(soup):
     pos_div = soup.select('#meta > div:nth-child(2) > p:nth-child(3)')
     pd = re.search(r">\:\s(\w+)", str(pos_div))
 
     if pd:
         return pd.group(1)
-    raise Exception(f"Could not get player position from position div: {str(pos_div)}")
+    # try alternate location (where it would be if no picture)
+    else:
+        return try_alt_pos_div(soup=soup, orig_div=pos_div)
 
 
 def get_team_id(soup):
