@@ -7,7 +7,7 @@ import sqlalchemy
 from sqlalchemy import create_engine, select
 
 import config
-from scrape_stats import fix_team_abbrev, scrape_playerlist
+from scrape_stats import fix_team_abbrev, scrape_playerlist, get_player_name_and_link_from_playerlist, get_player_age_from_playerlist
 from classes.Player import Player
 
 
@@ -36,32 +36,46 @@ def get_pid(engine, player):
 
 
 def create_sqs_message(sqs_client, player_json):
-    queue = sqs_client.get_queue_by_name(QueueName=config.sqs_queue_name)
-    response = queue.send_message(MessageBody=player_json)
+    response = sqs_client.send_message(QueueUrl=config.sqs_queue_url, MessageBody=player_json)
     print(response.get('MessageId'))
+
+
+def publish_sns_message(sns_client):
+    response = sns_client.publish(TopicArn=config.sns_topic_arn, Message=f"queue writer finished")
+    print(response)
 
 
 def main(args):
     engine = create_engine(
         "mysql+pymysql://" + config.mysql_user + ":" + config.mysql_pw + "@" + config.mysql_host + "/" + config.mysql_db)
 
-    sqs_client = boto3.resource("sqs")
+    sqs_client = boto3.client("sqs")
+    sns_client = boto3.client("sns")
+
     today = date.today()
     # if september or later, get this years data. If January-August we want last years data
     year = str(today.year) if today.month > 9 else str(today.year - 1)
     playerlist_url = f"https://www.pro-football-reference.com/years/{year}/fantasy.htm"
 
-    if args.test_mode:
-        players = scrape_playerlist(url=playerlist_url, max_rows=34)
-    else:
-        players = scrape_playerlist(url=playerlist_url)
-
-    for player in players:
-        player.pid, full_scrape_enabled = get_pid(engine, player)
-        player_json = player.get_sqs_json(str(full_scrape_enabled))
-        print(f"creating sqs message for {player_json}")
-        if not args.test_mode:
-            create_sqs_message(sqs_client, player_json)
+    soup = scrape_playerlist(url=playerlist_url)
+    i = 1
+    while soup.select(f"#fantasy > tbody > tr:nth-child({i})"):
+        # skip header rows
+        if not soup.select(f"#fantasy > tbody > tr:nth-child({i}) > th.ranker.sort_default_asc.show_partial_when_sorting.center"):
+            player_name, player_link = get_player_name_and_link_from_playerlist(soup.select(f'#fantasy > tbody > tr:nth-child({i}) > td:nth-child(2) > a'))
+            player_fn = player_name.split()[0]
+            # Get multi last names like St. Brown and combine into one last name
+            player_ln = ' '.join([str(elem) for elem in player_name.split()[1:]])
+            player_age = get_player_age_from_playerlist(soup.select(f'#fantasy > tbody > tr:nth-child({i}) > td:nth-child(5)'))
+            player = Player(fn=player_fn, ln=player_ln, age=player_age, url=player_link)
+            print(f"Got playerdata for {player_name}")
+            player.pid, full_scrape_enabled = get_pid(engine, player)
+            player_json = player.get_sqs_json(str(full_scrape_enabled))
+            print(f"creating sqs message for {player_json}")
+            if not args.test_mode:
+                create_sqs_message(sqs_client, player_json)
+        i += 1
+    publish_sns_message(sns_client=sns_client)
     engine.dispose()
 
 

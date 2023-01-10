@@ -2,6 +2,7 @@ import argparse
 import csv
 from ast import literal_eval
 from datetime import date
+from time import sleep
 
 import boto3
 from distutils.util import strtobool
@@ -51,7 +52,7 @@ def get_test_message_from_sqs_sample(sample_path):
 def get_players_from_sqs():
     sqs_client = boto3.resource("sqs")
     queue = sqs_client.get_queue_by_name(QueueName=config.sqs_queue_name)
-    messages = queue.receive_messages(MaxNumberOfMessages=5)
+    messages = queue.receive_messages(MaxNumberOfMessages=10)
 
     players_to_scrape = {}
     for message in messages:
@@ -67,6 +68,7 @@ def get_players_from_sqs():
             "message": message,
             "full_scrape": bool(strtobool(full_scrape_enabled))
         }
+        print(f"Adding player {player.fn} {player.ln} to list of players to scrape with pid: {player.pid}")
 
     return players_to_scrape
 
@@ -89,6 +91,7 @@ def main(args):
 
     while len(players) > 0:
         for pid in players:
+            print(f"Selecting player with pid: {pid}")
             player = players[pid]["player_obj"]
             years_to_scrape = [get_current_season()] if not players[pid]["full_scrape"] else None
             scrape_playerdata(player, test_mode=True, years_to_scrape=years_to_scrape)
@@ -105,7 +108,6 @@ def main(args):
                     print(f"Could not delete SQS Message for player {player.fn} {player.ln}. Error is: {e}")
             else:  # if test mode exit after the first entry read
                 return 0
-
         players = get_players_from_sqs()  # if not test mode refill players from queue
     return 0
 

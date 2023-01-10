@@ -72,7 +72,8 @@ team_map = {
 s3_bucket = "s3://fantasyland-bucket-1"
 s3_key = "player_input_lists/FantasyPros_2022_Ros_ALL_Rankings.csv"
 
-sqs_queue_name = "fantasyland-queue"
+sqs_queue_url = "https://sqs.us-east-1.amazonaws.com/574311688713/fantasyland-queue"
+sns_topic_arn = "arn:aws:sns:us-east-1:574311688713:fantasyland-topic"
 
 # RDS
 mysql_user = env.get("MYSQL_USER", "root")

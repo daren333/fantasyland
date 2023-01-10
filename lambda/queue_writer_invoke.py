@@ -6,7 +6,7 @@ def lambda_handler(event,context):
     response = client.run_task(
         cluster='fantasyland-stats-cluster', # name of the cluster
         launchType='FARGATE',
-        taskDefinition='fantasyland-queue-writer:2', # replace with your task definition name and revision
+        taskDefinition='fantasyland-queue-writer:4', # replace with your task definition name and revision
         count=1,
         platformVersion='LATEST',
         networkConfiguration={
